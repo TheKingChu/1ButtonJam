@@ -9,6 +9,10 @@ public class DomeHealth : MonoBehaviour
     private int currentHealth;
 
     public Slider healthSlider;
+    private Image fillImage;
+    public float flashDuration = 0.2f;
+    public Color flashColor = Color.red;
+    private Color originalColor;
 
     // Start is called before the first frame update
     void Start()
@@ -16,6 +20,12 @@ public class DomeHealth : MonoBehaviour
         currentHealth = maxHealth;
         healthSlider.maxValue = maxHealth;
         healthSlider.value = currentHealth;
+
+        if(healthSlider != null)
+        {
+            fillImage = healthSlider.fillRect.GetComponent<Image>();
+            originalColor = fillImage.color;
+        }
     }
 
     public void TakeDamage(int damage)
@@ -23,11 +33,22 @@ public class DomeHealth : MonoBehaviour
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         healthSlider.value = currentHealth;
+        if(fillImage != null)
+        {
+            StartCoroutine(Flash());
+        }
         if(currentHealth <= 0)
         {
             currentHealth = 0;
             GameOver();
         }
+    }
+
+    private IEnumerator Flash()
+    {
+        fillImage.color = flashColor;
+        yield return new WaitForSeconds(flashDuration);
+        fillImage.color = originalColor;
     }
 
     private void GameOver()

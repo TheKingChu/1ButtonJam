@@ -5,12 +5,16 @@ using UnityEngine;
 public class ShopManager : MonoBehaviour
 {
     public GameObject shopUI;
+    public GameObject archController;
+    public GameObject laserGunPrefab;
+    private ArchController arch;
+    private LaserGun laserGun;
 
     [Header("Upgrades")]
     public int rpmLevel = 0, canonsLevel = 0, laserLevel = 0;
     public int maxUpgradeLevel = 5;
 
-    //Cost for each item
+    // Cost for each item upgrade
     private int[] rpmCosts = { 5, 10, 15, 20, 25 };
     private int[] canonCosts = { 10, 20, 30, 40, 50 };
     private int[] laserCosts = { 25, 50, 75, 100, 125 };
@@ -18,10 +22,10 @@ public class ShopManager : MonoBehaviour
     private int selectedItemIndex = 0;
     private bool canCloseShop = false;
 
-    // Start is called before the first frame update
     void Start()
     {
         shopUI.SetActive(false);
+        arch = archController.GetComponent<ArchController>();
     }
 
     public void OpenShop()
@@ -36,7 +40,6 @@ public class ShopManager : MonoBehaviour
         shopUI.SetActive(false);
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (shopUI.activeSelf)
@@ -49,13 +52,13 @@ public class ShopManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            selectedItemIndex = (selectedItemIndex + 1) % 3;
+            selectedItemIndex = (selectedItemIndex + 1) % 3;  // Rotate between RPM, Canons, and Laser
         }
         if (Input.GetKey(KeyCode.Space))
         {
             if (Upgrade())
             {
-                CloseShop();
+                CloseShop();  // Close shop after an upgrade is successful
             }
         }
     }
@@ -65,24 +68,37 @@ public class ShopManager : MonoBehaviour
         int playerCoins = PlayerStats.coins;
         int cost = GetCurrentUpgradeCost();
 
-        if(playerCoins >= cost)
+        if (playerCoins >= cost)
         {
-            if(selectedItemIndex == 0 && rpmLevel < maxUpgradeLevel)
+            if (selectedItemIndex == 0 && rpmLevel < maxUpgradeLevel)
             {
                 rpmLevel++;
                 PlayerStats.coins -= cost;
+
+                // Apply the new RPM level to the firing rate of all canons
+                arch.UpgradeRPM(rpmLevel);
                 return true;
             }
-            else if(selectedItemIndex == 1 && canonsLevel < maxUpgradeLevel)
+            else if (selectedItemIndex == 1 && canonsLevel < maxUpgradeLevel)
             {
                 canonsLevel++;
                 PlayerStats.coins -= cost;
+
+                // Add a new canon to the arch
+                arch.UpgradeCanons(canonsLevel);
                 return true;
             }
-            else if(selectedItemIndex == 2 && laserLevel < maxUpgradeLevel)
+            else if (selectedItemIndex == 2 && laserLevel < maxUpgradeLevel)
             {
                 laserLevel++;
                 PlayerStats.coins -= cost;
+
+                if (laserLevel == 1) // Add laser only once (first upgrade)
+                {
+                    GameObject laser = Instantiate(laserGunPrefab, archController.transform);
+                    laserGun = laser.GetComponent<LaserGun>();
+                    laserGun.ActivateLaser();  // Activate laser gun
+                }
                 return true;
             }
         }
@@ -93,11 +109,11 @@ public class ShopManager : MonoBehaviour
     {
         switch (selectedItemIndex)
         {
-            case 0:
+            case 0: // RPM
                 return rpmLevel < maxUpgradeLevel ? rpmCosts[rpmLevel] : int.MaxValue;
-            case 1:
+            case 1: // Canons
                 return canonsLevel < maxUpgradeLevel ? canonCosts[canonsLevel] : int.MaxValue;
-            case 2:
+            case 2: // Laser
                 return laserLevel < maxUpgradeLevel ? laserCosts[laserLevel] : int.MaxValue;
             default:
                 return int.MaxValue;

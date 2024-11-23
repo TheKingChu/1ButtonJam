@@ -10,6 +10,7 @@ public class WaveSpawner : MonoBehaviour
     public int initialWaveSize = 10;
 
     public ShopManager shopManager;
+    public WaveManager waveManager;
 
     private int waveNumber = 0;
     private bool isShopActive = false;
@@ -27,6 +28,8 @@ public class WaveSpawner : MonoBehaviour
     private IEnumerator StartWaveAfterDelay()
     {
         waveInProgress = true;
+        waveManager.StartWave();
+        yield return new WaitForSeconds(2f);
         yield return new WaitForSeconds(timeBetweenWaves);
         StartCoroutine(SpawnWave());
     }
