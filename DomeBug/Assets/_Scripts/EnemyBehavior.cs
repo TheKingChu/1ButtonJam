@@ -31,6 +31,11 @@ public class EnemyBehavior : MonoBehaviour
             domeHealth.TakeDamage(damage);
             Destroy(gameObject);
         }
+
+        if (collision.gameObject.CompareTag("Bullet"))
+        {
+            Die();
+        }
     }
 
     public void TakeDamage(int dmg)

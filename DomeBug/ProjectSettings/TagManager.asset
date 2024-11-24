@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - Dome
+  - Bullet
   layers:
   - Default
   - TransparentFX

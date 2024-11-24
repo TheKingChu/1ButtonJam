@@ -9,8 +9,8 @@ public class ArchController : MonoBehaviour
 
     private int canonCount = 1;
     private List<GameObject> canons = new List<GameObject>();
-
-    private float archAngle = 180f; // Total angle of the arch (180 degrees)
+    private float currentAngle = 0f;
+    private bool movingRight = true; // To determine the direction of movement
 
     void Start()
     {
@@ -20,8 +20,7 @@ public class ArchController : MonoBehaviour
 
     void Update()
     {
-        // Rotate the arch around the center
-        transform.Rotate(Vector3.down, rotationSpeed * Time.deltaTime);
+        OscillateArch();
     }
 
     public void UpgradeCanons()
@@ -30,57 +29,46 @@ public class ArchController : MonoBehaviour
         AddCanon();    // Add a new canon
     }
 
-    void AddCanon()
+    private void AddCanon()
     {
-        // Debugging canonCount before adding a new canon
-        Debug.Log("Adding canon with canonCount: " + canonCount);
-
-        // Ensure canonCount is greater than 0 before proceeding
-        if (canonCount <= 0)
+        float angleStep = 180f / canonCount; // Calculate the spacing of cannons
+        for (int i = 0; i < canonCount; i++)
         {
-            Debug.LogError("Canon count must be greater than 0.");
-            return;
+            float angle = -90f + i * angleStep; // Start at -90 degrees and distribute over 180 degrees
+            Quaternion rotation = Quaternion.Euler(0, 0, angle);
+            Vector3 position = archCenter.position + rotation * Vector3.up * 5f; // Adjust radius (distance)
+
+            GameObject newCanon = Instantiate(canonPrefab, position, rotation);
+            newCanon.transform.parent = transform;
+            canons.Add(newCanon);
         }
-
-        // Calculate the angle between each canon based on the total arch angle
-        float angleBetweenCanons = archAngle / (float)(canonCount);  // Spread the canons across the 180-degree arc
-
-        // Calculate the angle for the new canon, distributing them over the 180-degree range
-        float angle = -archAngle / 2 + (canons.Count) * angleBetweenCanons;
-
-        // Log angle for debugging
-        Debug.Log("Calculated angle: " + angle);
-
-        // Ensure the angle is valid and within the expected range
-        angle = Mathf.Clamp(angle, -archAngle / 2, archAngle / 2);
-
-        // Generate a quaternion for the rotation around the Y-axis
-        Quaternion rotation = Quaternion.Euler(0, angle, 0);
-
-        // Calculate the position for the new canon at a fixed distance (5 units) from the center of the arch
-        Vector3 position = rotation * Vector3.forward * 5f;
-
-        // Log position for debugging
-        Debug.Log("Calculated position: " + position);
-
-        // Ensure the position is valid before instantiating
-        if (float.IsNaN(position.x) || float.IsNaN(position.y) || float.IsNaN(position.z))
-        {
-            Debug.LogError("Calculated position is invalid (NaN). Aborting canon instantiation.");
-            return;
-        }
-
-        // Instantiate the new canon at the calculated position and with the calculated rotation
-        GameObject newCanon = Instantiate(canonPrefab, archCenter.position + position, rotation);
-
-        // Attach the new canon to the arch as a child
-        newCanon.transform.parent = transform;
-
-        // Add the new canon to the list
-        canons.Add(newCanon);
     }
 
+    private void OscillateArch()
+    {
+        // Determine the direction and update the angle
+        if (movingRight)
+        {
+            currentAngle += rotationSpeed * Time.deltaTime;
+            if (currentAngle >= 90f) // Limit to +90 degrees
+            {
+                currentAngle = 90f;
+                movingRight = false; // Reverse direction
+            }
+        }
+        else
+        {
+            currentAngle -= rotationSpeed * Time.deltaTime;
+            if (currentAngle <= -90f) // Limit to -90 degrees
+            {
+                currentAngle = -90f;
+                movingRight = true; // Reverse direction
+            }
+        }
 
+        // Apply the rotation to the arch
+        transform.rotation = Quaternion.Euler(0, 0, currentAngle);
+    }
 
     public void UpgradeRPM(int rpmLevel)
     {
