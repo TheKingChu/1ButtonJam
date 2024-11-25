@@ -10,7 +10,7 @@ public class Bullet : MonoBehaviour
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.velocity = transform.forward * speed;
+            rb.velocity = transform.up * speed;
         }
     }
 

@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class EnemyBehavior : MonoBehaviour
 {
+    public delegate void EnemyDestroyedHandler(GameObject enemy);
+    public event EnemyDestroyedHandler OnEnemyDestroyed;
+
     public int health = 1;
     public int damage = 5;
     public int coinReward = 1;
 
     public GameObject deathEffect;
-
 
     // Update is called once per frame
     void Update()
@@ -23,17 +25,20 @@ public class EnemyBehavior : MonoBehaviour
         transform.position = Vector3.MoveTowards(transform.position, dome.position, Time.deltaTime * 2f);
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        if (collision.gameObject.CompareTag("Dome"))
+        if (other.gameObject.CompareTag("Dome"))
         {
-            DomeHealth domeHealth = collision.gameObject.GetComponent<DomeHealth>();
+            DomeHealth domeHealth = other.gameObject.GetComponent<DomeHealth>();
             domeHealth.TakeDamage(damage);
+            Instantiate(deathEffect, transform.position, Quaternion.identity);
+            OnEnemyDestroyed?.Invoke(gameObject);
             Destroy(gameObject);
         }
 
-        if (collision.gameObject.CompareTag("Bullet"))
+        if (other.gameObject.CompareTag("Bullet"))
         {
+            Destroy(other.gameObject);
             Die();
         }
     }
@@ -49,8 +54,9 @@ public class EnemyBehavior : MonoBehaviour
 
     private void Die()
     {
-        PlayerStats.coins += coinReward;
+        PlayerStats.AddCoins(coinReward);
         Instantiate(deathEffect, transform.position, Quaternion.identity);
+        OnEnemyDestroyed?.Invoke(gameObject);
         Destroy(gameObject);
     }
 }

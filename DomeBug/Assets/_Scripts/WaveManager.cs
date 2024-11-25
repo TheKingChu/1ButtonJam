@@ -17,7 +17,6 @@ public class WaveManager : MonoBehaviour
     public void StartWave()
     {
         ShowWaveText();
-        // Start spawning enemies or anything related to starting a new wave here
     }
 
     // Display the wave text for a short time

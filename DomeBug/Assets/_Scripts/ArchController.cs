@@ -50,18 +50,18 @@ public class ArchController : MonoBehaviour
         if (movingRight)
         {
             currentAngle += rotationSpeed * Time.deltaTime;
-            if (currentAngle >= 90f) // Limit to +90 degrees
+            if (currentAngle >= 180f) // Limit to +90 degrees
             {
-                currentAngle = 90f;
+                currentAngle = 180f;
                 movingRight = false; // Reverse direction
             }
         }
         else
         {
             currentAngle -= rotationSpeed * Time.deltaTime;
-            if (currentAngle <= -90f) // Limit to -90 degrees
+            if (currentAngle <= 0f) // Limit to -90 degrees
             {
-                currentAngle = -90f;
+                currentAngle = 0f;
                 movingRight = true; // Reverse direction
             }
         }

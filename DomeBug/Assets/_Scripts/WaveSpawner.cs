@@ -15,11 +15,16 @@ public class WaveSpawner : MonoBehaviour
     private int waveNumber = 0;
     private bool isShopActive = false;
     private bool waveInProgress = false;
+    private bool isWaveSpawnerNotified = false;
+
+    private List<GameObject> activeEnemies = new List<GameObject>();
+
+    public ArchController archController;
 
     // Update is called once per frame
     void Update()
     {
-        if(!isShopActive && !waveInProgress)
+        if(!isShopActive && !waveInProgress && activeEnemies.Count == 0)
         {
             StartCoroutine(StartWaveAfterDelay());
         }
@@ -29,8 +34,12 @@ public class WaveSpawner : MonoBehaviour
     {
         waveInProgress = true;
         waveManager.StartWave();
+
         yield return new WaitForSeconds(2f);
         yield return new WaitForSeconds(timeBetweenWaves);
+
+        archController.enabled = true;
+
         StartCoroutine(SpawnWave());
     }
 
@@ -47,25 +56,49 @@ public class WaveSpawner : MonoBehaviour
 
         //end of wave = open shop
         waveInProgress = false;
-        OpenShop();
+        StartCoroutine(CheckForEnemies());
     }
 
     private void SpawnEnemy()
     {
         GameObject enemy = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-        Instantiate(enemy, spawnPoint.position, spawnPoint.rotation);
+        GameObject spawnedEnemy = Instantiate(enemy, spawnPoint.position, spawnPoint.rotation);
+
+        activeEnemies.Add(spawnedEnemy);
+        spawnedEnemy.GetComponent<EnemyBehavior>().OnEnemyDestroyed += HandleEnemyDestroyed;
+    }
+
+    private IEnumerator CheckForEnemies()
+    {
+        while(activeEnemies.Count > 0)
+        {
+            yield return null;
+        }
+        OpenShop();
+    }
+
+    private void HandleEnemyDestroyed(GameObject enemy)
+    {
+        if (activeEnemies.Contains(enemy))
+        {
+            activeEnemies.Remove(enemy);
+        }
     }
 
     private void OpenShop()
     {
         isShopActive = true;
+        archController.enabled = false;
         shopManager.OpenShop();
     }
 
     public void CloseShop()
     {
-        isShopActive = false;
-        shopManager.CloseShop();
+        if (isWaveSpawnerNotified) return; // Prevent redundant calls
+        isWaveSpawnerNotified = true;
+
+        // Optionally notify back
+        FindObjectOfType<ShopManager>().CloseShop();
     }
 }
