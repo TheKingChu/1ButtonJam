@@ -1,5 +1,6 @@
 using UnityEngine;
-using TMPro;  // Include this if you're using TextMeshPro
+using TMPro;
+using System.Collections;  // Include this if you're using TextMeshPro
 
 public class WaveManager : MonoBehaviour
 {
@@ -25,13 +26,13 @@ public class WaveManager : MonoBehaviour
         waveTextUI.SetActive(true);  // Show the wave text UI
         waveText.text = "Wave " + currentWave;  // Set the wave text
 
-        // Hide the wave text after a delay
-        Invoke("HideWaveText", waveTextDuration);
+        StartCoroutine(HideWaveText());
     }
 
     // Method to hide the wave text
-    private void HideWaveText()
+    private IEnumerator HideWaveText()
     {
+        yield return new WaitForSecondsRealtime(waveTextDuration);
         waveTextUI.SetActive(false);
     }
 

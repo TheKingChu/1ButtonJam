@@ -25,6 +25,11 @@ public class ShopManager : MonoBehaviour
     private float holdProgress = 0f;
     private bool isShopClosed = false;
 
+    private bool isLocked = false;
+    private float lastTapTime = 0f;
+    private float doubleTapThreshold = 0.3f;
+    private bool awaitingSecondTap = false;
+
     [Header("UI")]
     public Button[] itemButtons;
     public Image[] upgradeBars;
@@ -46,6 +51,7 @@ public class ShopManager : MonoBehaviour
         shopUI.SetActive(true);
         SelectItem(0);
         ResetHold();
+        isShopClosed = false;
     }
 
     public void CloseShop()
@@ -54,10 +60,7 @@ public class ShopManager : MonoBehaviour
         if (isShopClosed) return; // Prevent redundant calls
         isShopClosed = true;
 
-        // Perform your shop closing logic here
-
-        // Notify WaveSpawner
-        FindObjectOfType<WaveSpawner>().CloseShop();
+        waveSpawner.CloseShop();
     }
 
     void Update()
@@ -73,33 +76,80 @@ public class ShopManager : MonoBehaviour
         // Navigate through items with a tap of the Space key
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            if (!isHolding)
+            float currentTime = Time.time;
+            if(awaitingSecondTap && currentTime - lastTapTime < doubleTapThreshold)
             {
-                selectedItemIndex = (selectedItemIndex + 1) % itemButtons.Length;
-                SelectItem(selectedItemIndex);
-                ResetHold();
+                ToggleLock();
+                awaitingSecondTap = false;
             }
+            else
+            {
+                awaitingSecondTap = true;
+                StartCoroutine(ProcessSingleTapWithDelay());
+            }
+
+            lastTapTime = currentTime;
         }
 
         // Hold Space to purchase the current item
         if (Input.GetKey(KeyCode.Space))
         {
-            isHolding = true;
-            holdProgress += Time.deltaTime / holdTime;
-            upgradeBars[selectedItemIndex].fillAmount = holdProgress;
-
-            if (holdProgress >= 1f)
+            if(isLocked && !isHolding)
             {
-                if (UpgradeSelectedItem())
+                holdProgress += Time.deltaTime / holdTime;
+                holdProgress = Mathf.Clamp01(holdProgress);
+                upgradeBars[selectedItemIndex].fillAmount = holdProgress;
+
+                if (holdProgress >= 1f)
                 {
-                    CloseShop(); // Close shop after a successful purchase
+                    if (UpgradeSelectedItem())
+                    {
+                        waveSpawner.CloseShop(); // Close shop after a successful purchase
+                    }
+                    ResetHold();
                 }
-                ResetHold();
             }
         }
         else if (Input.GetKeyUp(KeyCode.Space))
         {
             ResetHold();
+        }
+    }
+
+    private IEnumerator ProcessSingleTapWithDelay()
+    {
+        yield return new WaitForSeconds(doubleTapThreshold);
+
+        if (awaitingSecondTap)
+        {
+            awaitingSecondTap = false;
+            if (!isLocked)
+            {
+                CycleSelection();
+            }
+        }
+    }
+
+    private void CycleSelection()
+    {
+        if (isLocked) return;
+
+        selectedItemIndex = (selectedItemIndex + 1) % itemButtons.Length;
+        SelectItem(selectedItemIndex);
+        ResetHold();
+        Debug.Log($"Selected Item: {selectedItemIndex}");
+    }
+
+    private void ToggleLock()
+    {
+        isLocked = !isLocked;
+        if (isLocked)
+        {
+            Debug.Log($"locked on item: {selectedItemIndex}");
+        }
+        else
+        {
+            Debug.Log("unlocked");
         }
     }
 

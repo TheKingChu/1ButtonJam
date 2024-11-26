@@ -13,10 +13,54 @@ public class EnemyBehavior : MonoBehaviour
 
     public GameObject deathEffect;
 
+    private bool isPaused = false;
+
     // Update is called once per frame
     void Update()
     {
-        MoveTowardsDome();
+        // Check if the shop is active, if so, pause the enemy behavior
+        if (WaveSpawner.isShopActive)
+        {
+            if (!isPaused)
+            {
+                PauseEnemy();
+            }
+        }
+        else
+        {
+            // If the shop is not active, resume the enemy behavior
+            if (isPaused)
+            {
+                ResumeEnemy();
+            }
+
+            // Normal behavior (moving towards the dome)
+            MoveTowardsDome();
+        }
+    }
+
+    private void PauseEnemy()
+    {
+        isPaused = true;
+        // Stop enemy movement by freezing Rigidbody velocity
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.velocity = Vector3.zero;  // Freeze velocity
+            rb.isKinematic = true;        // Optionally make Rigidbody kinematic while paused
+        }
+    }
+
+    private void ResumeEnemy()
+    {
+        isPaused = false;
+
+        // Ensure Rigidbody is no longer kinematic and resumes normal behavior
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false; // Allow Rigidbody to be affected by physics again
+        }
     }
 
     private void MoveTowardsDome()
@@ -45,6 +89,7 @@ public class EnemyBehavior : MonoBehaviour
 
     public void TakeDamage(int dmg)
     {
+        if (isPaused) return;  // If paused, don't take damage
         health -= dmg;
         if(health <= 0)
         {

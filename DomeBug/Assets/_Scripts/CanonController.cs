@@ -4,13 +4,16 @@ public class CanonController : MonoBehaviour
 {
     public GameObject bulletPrefab;  // Bullet prefab reference
     public Transform shootingPoint;  // The point from which the bullet is shot
+    public AudioSource audioSource;
     public float fireRate = 1f;  // Time between shots
     private float nextFireTime = 0f;  // Keeps track of when the next shot can be fired
 
     void Update()
     {
+        if (WaveSpawner.isShopActive) return;
         if (Input.GetKey(KeyCode.Space) && Time.time >= nextFireTime)
         {
+            audioSource.Play();
             ShootBullet();
             nextFireTime = Time.time + 1f / fireRate;
         }

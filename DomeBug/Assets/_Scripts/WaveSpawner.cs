@@ -13,18 +13,26 @@ public class WaveSpawner : MonoBehaviour
     public WaveManager waveManager;
 
     private int waveNumber = 0;
-    private bool isShopActive = false;
+    public static bool isShopActive = false;
     private bool waveInProgress = false;
     private bool isWaveSpawnerNotified = false;
 
     private List<GameObject> activeEnemies = new List<GameObject>();
 
     public ArchController archController;
+    [SerializeField] private CanonController canonController;
+
+    private void Start()
+    {
+        canonController = FindObjectOfType<CanonController>();
+    }
 
     // Update is called once per frame
     void Update()
     {
-        if(!isShopActive && !waveInProgress && activeEnemies.Count == 0)
+        canonController = FindObjectOfType<CanonController>();
+
+        if (!isShopActive && !waveInProgress && activeEnemies.Count == 0)
         {
             StartCoroutine(StartWaveAfterDelay());
         }
@@ -90,6 +98,7 @@ public class WaveSpawner : MonoBehaviour
     {
         isShopActive = true;
         archController.enabled = false;
+        canonController.enabled = false;
         shopManager.OpenShop();
     }
 
@@ -98,7 +107,10 @@ public class WaveSpawner : MonoBehaviour
         if (isWaveSpawnerNotified) return; // Prevent redundant calls
         isWaveSpawnerNotified = true;
 
-        // Optionally notify back
-        FindObjectOfType<ShopManager>().CloseShop();
+        isShopActive = false;
+        archController.enabled = true; // Re-enable ArchController
+        canonController.enabled = true;
+
+        shopManager.CloseShop(); ;
     }
 }
