@@ -75,6 +75,7 @@ public class EnemyBehavior : MonoBehaviour
         {
             DomeHealth domeHealth = other.gameObject.GetComponent<DomeHealth>();
             domeHealth.TakeDamage(damage);
+            GameManager.Instance.playerHealth = domeHealth.currentHealth;
             Instantiate(deathEffect, transform.position, Quaternion.identity);
             OnEnemyDestroyed?.Invoke(gameObject);
             Destroy(gameObject);
@@ -99,7 +100,7 @@ public class EnemyBehavior : MonoBehaviour
 
     private void Die()
     {
-        PlayerStats.AddCoins(coinReward);
+        GameManager.Instance.playerCoins += coinReward;
         Instantiate(deathEffect, transform.position, Quaternion.identity);
         OnEnemyDestroyed?.Invoke(gameObject);
         Destroy(gameObject);

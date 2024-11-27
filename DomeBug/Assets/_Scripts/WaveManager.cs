@@ -4,14 +4,15 @@ using System.Collections;  // Include this if you're using TextMeshPro
 
 public class WaveManager : MonoBehaviour
 {
-    public int currentWave = 1;  // The current wave number
     public GameObject waveTextUI;  // Reference to the UI Text element for the wave number
     public TextMeshProUGUI waveText;  // If using TextMeshPro, reference the TextMeshProUGUI component
     public float waveTextDuration = 2f;  // Duration to show the wave text
+    private int currentWave;
 
     void Start()
     {
         waveTextUI.SetActive(false);  // Make sure the wave text is hidden initially
+        currentWave = GameManager.Instance.currentWave;
     }
 
     // Call this method to start a new wave

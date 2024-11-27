@@ -6,7 +6,10 @@ public class CanonController : MonoBehaviour
     public Transform shootingPoint;  // The point from which the bullet is shot
     public AudioSource audioSource;
     public float fireRate = 1f;  // Time between shots
+    private float fireRateModifier = 1.0f;
     private float nextFireTime = 0f;  // Keeps track of when the next shot can be fired
+
+    private readonly float[] rpmModifiers = new float[] { 4f, 6f, 8f, 10f };
 
     void Update()
     {
@@ -27,12 +30,23 @@ public class CanonController : MonoBehaviour
 
     public void UpgradeRPM(int rpmLevel)
     {
-        rpmLevel++;
+        if (rpmLevel >= rpmModifiers.Length)
+        {
+            // If the level is too high, keep the max modifier
+            fireRateModifier = rpmModifiers[rpmModifiers.Length - 1];
+        }
+        else
+        {
+            fireRateModifier = rpmModifiers[rpmLevel];
+        }
+
         UpdateFireRate();
     }
 
-    void UpdateFireRate()
+    private void UpdateFireRate()
     {
-        fireRate = 1 * 0.5f; //adding 0.5 for each upgrade
+        // Adjust the fire rate based on the modifier (this can be used in firing logic)
+        float newFireRate = fireRate * fireRateModifier;
+        Debug.Log($"New Fire Rate: {newFireRate}");
     }
 }

@@ -14,6 +14,11 @@ public class Bullet : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        Destroy(gameObject, 10f);
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         // Handle collision (e.g., destroy the bullet or apply damage)

@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class PlayerStats: MonoBehaviour
 {
-    public static int coins = 0;
     public TMP_Text coinsText;
 
     private void Start()
@@ -13,20 +12,9 @@ public class PlayerStats: MonoBehaviour
         UpdateCoinUI();
     }
 
-    public static void AddCoins(int amount)
-    {
-        coins += amount;
-        FindObjectOfType<PlayerStats>().UpdateCoinUI();
-    }
-
-    public static void SpendCoins(int amount)
-    {
-        coins -= amount;
-        FindObjectOfType<PlayerStats>().UpdateCoinUI();
-    }
-
     private void UpdateCoinUI()
     {
+        int coins = GameManager.Instance.playerCoins;
         if (coinsText != null)
         {
             coinsText.text = $"Coins: {coins}";

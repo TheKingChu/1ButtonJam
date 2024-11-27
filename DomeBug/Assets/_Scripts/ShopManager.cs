@@ -1,132 +1,110 @@
-using System.Collections;
-using TMPro;
 using UnityEngine;
+using TMPro;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ShopManager : MonoBehaviour
 {
-    public GameObject shopUI;
-
-    public GameObject archController;
-    private ArchController arch;
+    [Header("UI Elements")]
+    public GameObject storeUI; // The main store UI panel
+    public TextMeshProUGUI[] upgradeTexts; // Upgrade descriptions and levels
+    public Slider[] progressBars; // Progress bars for purchasing
+    public Outline[] buttonOutlines; // Outlines for indicating selected item
 
     [Header("Upgrades")]
-    public int rpmLevel = 0, canonsLevel = 0, laserLevel = 0;
-    public int maxUpgradeLevel = 5;
+    public int[] upgradeLevels; // Current upgrade levels
+    public int[] maxUpgradeLevels; // Maximum upgrade levels for each item
+    public int[][] upgradeCosts; // Costs for upgrades (2D array per level)
 
-    [Header("Costs")]
-    private int[] rpmCosts = { 5, 10, 15, 20, 25 };
-    private int[] canonCosts = { 10, 20, 30, 40, 50 };
-    private int[] laserCosts = { 25, 50, 75, 100, 125 };
+    [Header("Input Settings")]
+    public float holdTime = 1.0f; // Time required to hold for purchase
+    public float doubleTapThreshold = 0.3f; // Time window for detecting double tap
 
-    private int selectedItemIndex = 0;
-    private bool isHolding = false;
-    private float holdTime = 1f;
-    private float holdProgress = 0f;
-    private bool isShopClosed = false;
+    private int selectedItemIndex = 0; // Index of the currently selected item
+    private bool isLocked = false; // Whether an item is locked for purchase
+    private bool isHolding = false; // If the player is holding the purchase button
+    private float holdProgress = 0.0f; // Current progress of the hold-to-buy action
 
-    private bool isLocked = false;
-    private float lastTapTime = 0f;
-    private float doubleTapThreshold = 0.3f;
+    private float lastTapTime = 0.0f;
     private bool awaitingSecondTap = false;
-
-    [Header("UI")]
-    public Button[] itemButtons;
-    public Image[] upgradeBars;
-    public TMP_Text[] upgradeLevelTexts;
-    public Outline[] buttonOutlines;
-
-    // Reference to the WaveSpawner to signal shop closure
-    public WaveSpawner waveSpawner;
+    private readonly bool isStoreOpen = true;
 
     void Start()
     {
-        shopUI.SetActive(false);
-        arch = archController.GetComponent<ArchController>();
-        UpdateUI();
-    }
+        Time.timeScale = 1;
+        Debug.Log("ShopManager script is active!");
 
-    public void OpenShop()
-    {
-        shopUI.SetActive(true);
-        SelectItem(0);
-        ResetHold();
-        isShopClosed = false;
-    }
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("GameManager instance is missing!");
+            return;
+        }
 
-    public void CloseShop()
-    {
-        shopUI.SetActive(false);
-        if (isShopClosed) return; // Prevent redundant calls
-        isShopClosed = true;
+        // Initialize upgrade costs
+        upgradeCosts = new int[][]
+        {
+        new int[] { 5, 10, 20, 40 }, // Costs for upgrade 0
+        new int[] { 10, 20, 40, 80 }, // Costs for upgrade 1
+        new int[] { 15, 30, 60, 120 }  // Costs for upgrade 2
+        };
 
-        waveSpawner.CloseShop();
+        upgradeLevels = GameManager.Instance.upgradeLevels;
+        maxUpgradeLevels = new int[] { 4, 4, 4 }; //setting the max levels
+
+        if (upgradeTexts.Length == 0 || progressBars.Length == 0 || buttonOutlines.Length == 0)
+        {
+            Debug.LogError("UI elements are not assigned in the Inspector!");
+            return;
+        }
+
+        UpdateShopUI();
     }
 
     void Update()
     {
-        if (shopUI.activeSelf)
+        UpdateShopUI();
+
+        if (isStoreOpen)
         {
-            HandleShopInput();
+            HandleInput();
+        }
+        else
+        {
+            Debug.Log("Store is not open."); // If this appears, `isStoreOpen` isn't true.
         }
     }
 
-    private void HandleShopInput()
+    private void HandleInput()
     {
-        // Navigate through items with a tap of the Space key
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            float currentTime = Time.time;
-            if(awaitingSecondTap && currentTime - lastTapTime < doubleTapThreshold)
+            Debug.Log("Space key pressed");
+
+            float currentTime = Time.unscaledTime;
+            if (awaitingSecondTap && currentTime - lastTapTime < doubleTapThreshold)
             {
-                ToggleLock();
                 awaitingSecondTap = false;
+                Debug.Log("Double-tap detected");
+                ToggleLock();
             }
             else
             {
                 awaitingSecondTap = true;
-                StartCoroutine(ProcessSingleTapWithDelay());
+                Debug.Log("Awaiting second tap...");
+                Invoke(nameof(ProcessSingleTap), doubleTapThreshold);
             }
-
             lastTapTime = currentTime;
         }
 
-        // Hold Space to purchase the current item
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKey(KeyCode.Space) && isLocked)
         {
-            if(isLocked && !isHolding)
-            {
-                holdProgress += Time.deltaTime / holdTime;
-                holdProgress = Mathf.Clamp01(holdProgress);
-                upgradeBars[selectedItemIndex].fillAmount = holdProgress;
-
-                if (holdProgress >= 1f)
-                {
-                    if (UpgradeSelectedItem())
-                    {
-                        waveSpawner.CloseShop(); // Close shop after a successful purchase
-                    }
-                    ResetHold();
-                }
-            }
+            Debug.Log("Space key held for purchase");
+            ProcessHold();
         }
         else if (Input.GetKeyUp(KeyCode.Space))
         {
+            Debug.Log("Space key released");
             ResetHold();
-        }
-    }
-
-    private IEnumerator ProcessSingleTapWithDelay()
-    {
-        yield return new WaitForSeconds(doubleTapThreshold);
-
-        if (awaitingSecondTap)
-        {
-            awaitingSecondTap = false;
-            if (!isLocked)
-            {
-                CycleSelection();
-            }
         }
     }
 
@@ -134,106 +112,199 @@ public class ShopManager : MonoBehaviour
     {
         if (isLocked) return;
 
-        selectedItemIndex = (selectedItemIndex + 1) % itemButtons.Length;
-        SelectItem(selectedItemIndex);
-        ResetHold();
+        selectedItemIndex = (selectedItemIndex + 1) % upgradeTexts.Length;
         Debug.Log($"Selected Item: {selectedItemIndex}");
     }
 
     private void ToggleLock()
     {
         isLocked = !isLocked;
-        if (isLocked)
+        Debug.Log(isLocked ? $"Locked on item: {selectedItemIndex}" : "Unlocked");
+    }
+
+    private void ProcessHold()
+    {
+        if (upgradeLevels[selectedItemIndex] >= maxUpgradeLevels[selectedItemIndex]) return; // Maxed out
+
+        isHolding = true;
+        holdProgress += Time.unscaledDeltaTime / holdTime;
+        progressBars[selectedItemIndex].value = Mathf.Clamp01(holdProgress);
+
+        if (holdProgress >= 1.0f)
         {
-            Debug.Log($"locked on item: {selectedItemIndex}");
-        }
-        else
-        {
-            Debug.Log("unlocked");
+            PurchaseUpgrade(selectedItemIndex);
+            ResetHold();
         }
     }
 
     private void ResetHold()
     {
         isHolding = false;
-        holdProgress = 0f;
+        holdProgress = 0.0f;
 
-        foreach (var bar in upgradeBars)
+        // Reset all progress bars
+        foreach (var bar in progressBars)
         {
-            bar.fillAmount = 0f;
+            bar.value = 0.0f;
         }
     }
-    private void SelectItem(int index)
+
+    private void ProcessSingleTap()
     {
+        if (awaitingSecondTap && !isLocked)
+        {
+            awaitingSecondTap = false;
+            CycleSelection();
+        }
+        else if (!isLocked)
+        {
+            // Avoid toggling lock during single tap
+            awaitingSecondTap = true;
+            Invoke(nameof(ResetAwaitingTap), doubleTapThreshold); // Reset awaiting state
+        }
+    }
+
+    private void ResetAwaitingTap()
+    {
+        awaitingSecondTap = false; // Clear flag
+    }
+
+
+    public void PurchaseUpgrade(int upgradeIndex)
+    {
+        int cost = GetUpgradeCost(upgradeIndex);
+
+        if (GameManager.Instance.playerCoins >= cost)
+        {
+            GameManager.Instance.playerCoins -= cost;
+            GameManager.Instance.upgradeLevels[upgradeIndex]++;
+            ApplyUpgradeEffect(upgradeIndex);
+            Debug.Log($"Upgrade {upgradeIndex} purchased. Level: {upgradeLevels[upgradeIndex]}");
+        }
+        else
+        {
+            Debug.Log("Not enough coins to purchase the upgrade!");
+        }
+
+        UpdateShopUI(); // Refresh UI with updated stats
+    }
+
+    private void ApplyUpgradeEffect(int upgradeIndex)
+    {
+        // Ensure that the GameManager and objects are properly initialized
+        if (!GameManager.Instance.IsInitialized())
+        {
+            Debug.LogWarning("Game objects not initialized yet.");
+            return; // Don't apply upgrade until initialization is complete
+        }
+
+        // Apply the corresponding upgrade effect
+        switch (upgradeIndex)
+        {
+            case 0:  // RPM Upgrade
+                if (GameManager.Instance.domeHolderPrefab != null)
+                {
+                    GameManager.Instance.domeHolderPrefab.GetComponentInChildren<CanonController>().UpgradeRPM(GameManager.Instance.upgradeLevels[upgradeIndex]);
+                }
+                break;
+            case 1:  // Add a canon
+                if (GameManager.Instance.domeHolderPrefab != null)
+                {
+                    GameManager.Instance.domeHolderPrefab.GetComponentInChildren<ArchController>().UpgradeCanons(GameManager.Instance.upgradeLevels[upgradeIndex]);
+                }
+                break;
+            case 2:  // Add static laser shooter
+                if (GameManager.Instance.laserGun != null)
+                {
+                    UpgradeLaserGun(GameManager.Instance.upgradeLevels[upgradeIndex]);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void UpgradeLaserGun(int laserUpgradeLevel)
+    {
+        switch (laserUpgradeLevel)
+        {
+            case 1:
+                GameManager.Instance.laserGun.ActivateLaser();
+                break;
+            case 2:
+                //GameManager.Instance.laserGun.UpgradeLaserDamage(10); // Increase laser damage or apply boost
+                break;
+            case 3:
+                // Add another laser
+                // Logic to add a second laser
+                break;
+            case 4:
+                // Damage boost for the second laser
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void ReturnToGame()
+    {
+        SceneManager.LoadScene("game");
+    }
+
+    private int GetUpgradeCost(int upgradeIndex)
+    {
+        int level = GameManager.Instance.upgradeLevels[upgradeIndex];
+        return GetCostForLevel(upgradeIndex, level);
+    }
+
+    private int GetCostForLevel(int upgradeIndex, int level)
+    {
+        // Example costs
+        int[][] costs = new int[][]
+        {
+            new int[] { 5, 10, 20, 40 }, // Upgrade 0
+            new int[] { 10, 20, 40, 80 }, // Upgrade 1
+            new int[] { 15, 30, 60, 120 }  // Upgrade 2
+        };
+
+        return level < costs[upgradeIndex].Length ? costs[upgradeIndex][level] : int.MaxValue;
+    }
+
+    private void UpdateShopUI()
+    {
+        bool canAffordUpgrade = false;
+        for (int i = 0; i < upgradeTexts.Length; i++)
+        {
+            int cost = GetUpgradeCost(i);
+            if (GameManager.Instance.playerCoins >= cost && upgradeLevels[i] < maxUpgradeLevels[i])
+            {
+                canAffordUpgrade = true;
+                break;
+            }
+        }
+
+        // If the player can't afford any upgrade, return to the game
+        if (!canAffordUpgrade)
+        {
+            ReturnToGame();
+            return;  // Exit the method early, no need to update the UI if we're going back to the game
+        }
+
+        // Update each upgrade UI
+        for (int i = 0; i < upgradeTexts.Length; i++)
+        {
+            int level = upgradeLevels[i];
+            string status = level >= maxUpgradeLevels[i] ? "MAX" : $"Cost: {GetUpgradeCost(i)}";
+            upgradeTexts[i].text = $"Upgrade {i + 1}\nLevel: {level}/{maxUpgradeLevels[i]}\n{status}";
+
+            // Update progress bar visuals
+            progressBars[i].value = 0.0f; // Reset progress bars
+        }
+
+        // Update button outlines for selection
         for (int i = 0; i < buttonOutlines.Length; i++)
         {
-            buttonOutlines[i].enabled = (i == index); // Highlight the selected button
+            buttonOutlines[i].enabled = (i == selectedItemIndex); // Highlight selected
         }
-    }
-
-
-    private bool UpgradeSelectedItem()
-    {
-        int playerCoins = PlayerStats.coins;
-        int cost = GetCurrentUpgradeCost();
-
-        if (playerCoins >= cost)
-        {
-            PlayerStats.SpendCoins(cost);
-
-            switch (selectedItemIndex)
-            {
-                case 0: // RPM
-                    if (rpmLevel < maxUpgradeLevel)
-                    {
-                        rpmLevel++;
-                        break;
-                    }
-                    return false;
-                case 1: // Canons
-                    if (canonsLevel < maxUpgradeLevel)
-                    {
-                        canonsLevel++;
-                        break;
-                    }
-                    return false;
-                case 2: // Laser
-                    if (laserLevel < maxUpgradeLevel)
-                    {
-                        laserLevel++;
-                        break;
-                    }
-                    return false;
-                default:
-                    return false;
-            }
-
-            UpdateUI();
-            return true; // Upgrade successful
-        }
-
-        return false; // Not enough coins
-    }
-
-    private int GetCurrentUpgradeCost()
-    {
-        switch (selectedItemIndex)
-        {
-            case 0:
-                return rpmLevel < maxUpgradeLevel ? rpmCosts[rpmLevel] : int.MaxValue;
-            case 1:
-                return canonsLevel < maxUpgradeLevel ? canonCosts[canonsLevel] : int.MaxValue;
-            case 2:
-                return laserLevel < maxUpgradeLevel ? laserCosts[laserLevel] : int.MaxValue;
-            default:
-                return int.MaxValue;
-        }
-    }
-
-    private void UpdateUI()
-    {
-        upgradeLevelTexts[0].text = $"RPM: {rpmLevel}/{maxUpgradeLevel}";
-        upgradeLevelTexts[1].text = $"Canons: {canonsLevel}/{maxUpgradeLevel}";
-        upgradeLevelTexts[2].text = $"Laser: {laserLevel}/{maxUpgradeLevel}";
     }
 }

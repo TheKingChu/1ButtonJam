@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class WaveSpawner : MonoBehaviour
 {
@@ -25,12 +26,14 @@ public class WaveSpawner : MonoBehaviour
     private void Start()
     {
         canonController = FindObjectOfType<CanonController>();
+        archController = FindObjectOfType<ArchController>();
     }
 
     // Update is called once per frame
     void Update()
     {
         canonController = FindObjectOfType<CanonController>();
+        archController = FindObjectOfType<ArchController>();
 
         if (!isShopActive && !waveInProgress && activeEnemies.Count == 0)
         {
@@ -83,7 +86,8 @@ public class WaveSpawner : MonoBehaviour
         {
             yield return null;
         }
-        OpenShop();
+        GameManager.Instance.currentWave++;
+        SceneManager.LoadScene("shop");
     }
 
     private void HandleEnemyDestroyed(GameObject enemy)
@@ -92,25 +96,5 @@ public class WaveSpawner : MonoBehaviour
         {
             activeEnemies.Remove(enemy);
         }
-    }
-
-    private void OpenShop()
-    {
-        isShopActive = true;
-        archController.enabled = false;
-        canonController.enabled = false;
-        shopManager.OpenShop();
-    }
-
-    public void CloseShop()
-    {
-        if (isWaveSpawnerNotified) return; // Prevent redundant calls
-        isWaveSpawnerNotified = true;
-
-        isShopActive = false;
-        archController.enabled = true; // Re-enable ArchController
-        canonController.enabled = true;
-
-        shopManager.CloseShop(); ;
     }
 }
