@@ -5,11 +5,10 @@ public class CanonController : MonoBehaviour
     public GameObject bulletPrefab;  // Bullet prefab reference
     public Transform shootingPoint;  // The point from which the bullet is shot
     public AudioSource audioSource;
-    public float fireRate = 1f;  // Time between shots
-    private float fireRateModifier = 1.0f;
+
+    public float fireRate = 2f;  // Time between shots
     private float nextFireTime = 0f;  // Keeps track of when the next shot can be fired
 
-    private readonly float[] rpmModifiers = new float[] { 4f, 6f, 8f, 10f };
 
     void Update()
     {
@@ -30,23 +29,31 @@ public class CanonController : MonoBehaviour
 
     public void UpgradeRPM(int rpmLevel)
     {
-        if (rpmLevel >= rpmModifiers.Length)
+        // Adjust the fire rate based on the upgrade level
+        switch (rpmLevel)
         {
-            // If the level is too high, keep the max modifier
-            fireRateModifier = rpmModifiers[rpmModifiers.Length - 1];
-        }
-        else
-        {
-            fireRateModifier = rpmModifiers[rpmLevel];
+            case 1:
+                fireRate = 4f; // Faster firing rate
+                Debug.Log("RPM upgraded to level 1: Faster fire rate!");
+                break;
+            case 2:
+                fireRate = 6f; // Even faster firing rate
+                Debug.Log("RPM upgraded to level 2: Even faster fire rate!");
+                break;
+            case 3:
+                fireRate = 8f; // Very fast firing rate
+                Debug.Log("RPM upgraded to level 3: Very fast fire rate!");
+                break;
+            case 4:
+                fireRate = 10f; // Super fast firing rate
+                Debug.Log("RPM upgraded to level 4: Super fast fire rate!");
+                break;
+            default:
+                fireRate = 2f; // Default fire rate
+                Debug.Log("RPM is at its base level.");
+                break;
         }
 
-        UpdateFireRate();
-    }
-
-    private void UpdateFireRate()
-    {
-        // Adjust the fire rate based on the modifier (this can be used in firing logic)
-        float newFireRate = fireRate * fireRateModifier;
-        Debug.Log($"New Fire Rate: {newFireRate}");
+        Debug.Log($"RPM upgraded to {fireRate} (Level {rpmLevel})");
     }
 }

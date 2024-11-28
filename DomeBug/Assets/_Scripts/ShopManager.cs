@@ -2,6 +2,8 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
+using System.Collections;
 
 public class ShopManager : MonoBehaviour
 {
@@ -22,12 +24,13 @@ public class ShopManager : MonoBehaviour
 
     private int selectedItemIndex = 0; // Index of the currently selected item
     private bool isLocked = false; // Whether an item is locked for purchase
-    private bool isHolding = false; // If the player is holding the purchase button
+    private bool isHolding = false;
     private float holdProgress = 0.0f; // Current progress of the hold-to-buy action
 
     private float lastTapTime = 0.0f;
     private bool awaitingSecondTap = false;
-    private readonly bool isStoreOpen = true;
+
+    private ArchController archController;
 
     void Start()
     {
@@ -57,20 +60,59 @@ public class ShopManager : MonoBehaviour
             return;
         }
 
+        GameManager.Instance.IsInitialized();
+
+        archController = FindObjectOfType<ArchController>();
+        if (archController != null)
+        {
+            archController.OnCanonSpawned += HandleCanonSpawned;
+        }
+
         UpdateShopUI();
     }
 
     void Update()
     {
         UpdateShopUI();
+        HandleInput();
+    }
 
-        if (isStoreOpen)
+    private void CycleSelection()
+    {
+        if (isLocked) return;
+
+        selectedItemIndex = (selectedItemIndex + 1) % upgradeTexts.Length;
+        Debug.Log($"Selected Item: {selectedItemIndex}");
+    }
+
+    private void ProcessSingleTap()
+    {
+        if (awaitingSecondTap && !isLocked)
         {
-            HandleInput();
+            awaitingSecondTap = false;
+            CycleSelection();
         }
-        else
+        else if (!isLocked)
         {
-            Debug.Log("Store is not open."); // If this appears, `isStoreOpen` isn't true.
+            // Avoid toggling lock during single tap
+            awaitingSecondTap = true;
+            Invoke(nameof(ResetAwaitingTap), doubleTapThreshold); // Reset awaiting state
+        }
+    }
+
+    private void HandleCanonSpawned(CanonController canonController)
+    {
+        Debug.LogWarning("CanonController detected via event!");
+        int rpmLevel = GameManager.Instance.upgradeLevels[0];
+        Debug.LogWarning($"RPM Level from GameManager: {rpmLevel}");
+        canonController.UpgradeRPM(rpmLevel);
+    }
+
+    private void OnDestroy()
+    {
+        if (archController != null)
+        {
+            archController.OnCanonSpawned -= HandleCanonSpawned; // Unsubscribe to avoid memory leaks
         }
     }
 
@@ -108,18 +150,11 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    private void CycleSelection()
-    {
-        if (isLocked) return;
-
-        selectedItemIndex = (selectedItemIndex + 1) % upgradeTexts.Length;
-        Debug.Log($"Selected Item: {selectedItemIndex}");
-    }
-
     private void ToggleLock()
     {
         isLocked = !isLocked;
         Debug.Log(isLocked ? $"Locked on item: {selectedItemIndex}" : "Unlocked");
+        buttonOutlines[selectedItemIndex].effectColor = isLocked ? Color.red : Color.cyan;
     }
 
     private void ProcessHold()
@@ -149,21 +184,6 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    private void ProcessSingleTap()
-    {
-        if (awaitingSecondTap && !isLocked)
-        {
-            awaitingSecondTap = false;
-            CycleSelection();
-        }
-        else if (!isLocked)
-        {
-            // Avoid toggling lock during single tap
-            awaitingSecondTap = true;
-            Invoke(nameof(ResetAwaitingTap), doubleTapThreshold); // Reset awaiting state
-        }
-    }
-
     private void ResetAwaitingTap()
     {
         awaitingSecondTap = false; // Clear flag
@@ -178,8 +198,21 @@ public class ShopManager : MonoBehaviour
         {
             GameManager.Instance.playerCoins -= cost;
             GameManager.Instance.upgradeLevels[upgradeIndex]++;
-            ApplyUpgradeEffect(upgradeIndex);
             Debug.Log($"Upgrade {upgradeIndex} purchased. Level: {upgradeLevels[upgradeIndex]}");
+
+            // Call HandleCanonSpawned with the CanonController reference
+            if (archController != null)
+            {
+                CanonController canonController = archController.GetComponentInChildren<CanonController>();
+                if (canonController != null)
+                {
+                    HandleCanonSpawned(canonController);  // Passing the canonController to the method
+                }
+                else
+                {
+                    Debug.LogError("CanonController not found in ArchController!");
+                }
+            }
         }
         else
         {
@@ -189,40 +222,6 @@ public class ShopManager : MonoBehaviour
         UpdateShopUI(); // Refresh UI with updated stats
     }
 
-    private void ApplyUpgradeEffect(int upgradeIndex)
-    {
-        // Ensure that the GameManager and objects are properly initialized
-        if (!GameManager.Instance.IsInitialized())
-        {
-            Debug.LogWarning("Game objects not initialized yet.");
-            return; // Don't apply upgrade until initialization is complete
-        }
-
-        // Apply the corresponding upgrade effect
-        switch (upgradeIndex)
-        {
-            case 0:  // RPM Upgrade
-                if (GameManager.Instance.domeHolderPrefab != null)
-                {
-                    GameManager.Instance.domeHolderPrefab.GetComponentInChildren<CanonController>().UpgradeRPM(GameManager.Instance.upgradeLevels[upgradeIndex]);
-                }
-                break;
-            case 1:  // Add a canon
-                if (GameManager.Instance.domeHolderPrefab != null)
-                {
-                    GameManager.Instance.domeHolderPrefab.GetComponentInChildren<ArchController>().UpgradeCanons(GameManager.Instance.upgradeLevels[upgradeIndex]);
-                }
-                break;
-            case 2:  // Add static laser shooter
-                if (GameManager.Instance.laserGun != null)
-                {
-                    UpgradeLaserGun(GameManager.Instance.upgradeLevels[upgradeIndex]);
-                }
-                break;
-            default:
-                break;
-        }
-    }
 
     private void UpgradeLaserGun(int laserUpgradeLevel)
     {

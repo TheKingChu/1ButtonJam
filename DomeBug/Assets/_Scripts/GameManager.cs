@@ -15,11 +15,11 @@ public class GameManager : MonoBehaviour
     public int playerCoins = 0;
     public int playerHealth = 100;
 
-    public int[] upgradeLevels = { 0, 0, 0 }; // Example: RPM, Canons, Laser
+    public int[] upgradeLevels = new int[3];
 
     public TMP_Text coinText;
 
-    private bool isInitialized = false;
+    //private bool isInitialized = false;
 
 
     private void Awake()
@@ -33,6 +33,10 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject); // Prevent duplicates
         }
+
+        upgradeLevels[0] = 0;
+        upgradeLevels[1] = 0;
+        upgradeLevels[2] = 0;
 
         // Check if DomeHolder is already in the scene (due to DontDestroyOnLoad)
         domeHolderObject = GameObject.Find("DomeHolder");
@@ -128,6 +132,6 @@ public class GameManager : MonoBehaviour
 
     public bool IsInitialized()
     {
-        return isInitialized;
+        return domeHolderPrefab != null && upgradeLevels != null;
     }
 }

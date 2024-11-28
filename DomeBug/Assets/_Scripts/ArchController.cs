@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,6 +13,9 @@ public class ArchController : MonoBehaviour
     private float currentAngle = 0f;
     private bool movingRight = true; // To determine the direction of movement
 
+    // Event to notify when a canon is spawned
+    public event Action<CanonController> OnCanonSpawned;
+
     void Start()
     {
         Debug.Log("Initial canonCount: " + canonCount);
@@ -21,12 +25,6 @@ public class ArchController : MonoBehaviour
     void Update()
     {
         OscillateArch();
-    }
-
-    public void UpgradeCanons()
-    {
-        canonCount++;  // Increase the canon count
-        AddCanon();    // Add a new canon
     }
 
     private void AddCanon()
@@ -41,6 +39,25 @@ public class ArchController : MonoBehaviour
             GameObject newCanon = Instantiate(canonPrefab, position, rotation);
             newCanon.transform.parent = transform;
             canons.Add(newCanon);
+
+            // Notify listeners (e.g., ShopManager) about the new CanonController
+            CanonController canonController = newCanon.GetComponent<CanonController>();
+            if (canonController != null)
+            {
+                Debug.Log("Invoking OnCanonSpawned for new CanonController.");
+                OnCanonSpawned?.Invoke(canonController); // Trigger the event
+            }
+            else
+            {
+                Debug.LogError("CanonController component not found on spawned canon.");
+            }
+
+            // Immediately apply the current RPM upgrade level to the new canon
+            if (GameManager.Instance != null)
+            {
+                int rpmLevel = GameManager.Instance.upgradeLevels[0];
+                canonController.UpgradeRPM(rpmLevel);
+            }
         }
     }
 
@@ -70,22 +87,15 @@ public class ArchController : MonoBehaviour
         transform.rotation = Quaternion.Euler(0, 0, currentAngle);
     }
 
-    public void UpgradeRPM(int rpmLevel)
-    {
-        // Adjust the firing rate of each canon based on the RPM level
-        foreach (GameObject canon in canons)
-        {
-            var controller = canon.GetComponent<CanonController>();
-            controller.UpgradeRPM(rpmLevel);  // Assuming CanonController has an UpgradeRPM method
-        }
-    }
-
     public void UpgradeCanons(int newCanonLevel)
     {
-        // Add canons up to the specified level
-        while (canons.Count < newCanonLevel)
+        int maxCanonLevel = 4;
+        newCanonLevel = Mathf.Min(newCanonLevel, maxCanonLevel);
+
+        while (canonCount < newCanonLevel)
         {
-            AddCanon();  // Add a new canon
+            canonCount++;
+            AddCanon();
         }
     }
 }

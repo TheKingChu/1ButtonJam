@@ -16,25 +16,11 @@ public class WaveSpawner : MonoBehaviour
     private int waveNumber = 0;
     public static bool isShopActive = false;
     private bool waveInProgress = false;
-    private bool isWaveSpawnerNotified = false;
-
     private List<GameObject> activeEnemies = new List<GameObject>();
-
-    public ArchController archController;
-    [SerializeField] private CanonController canonController;
-
-    private void Start()
-    {
-        canonController = FindObjectOfType<CanonController>();
-        archController = FindObjectOfType<ArchController>();
-    }
 
     // Update is called once per frame
     void Update()
     {
-        canonController = FindObjectOfType<CanonController>();
-        archController = FindObjectOfType<ArchController>();
-
         if (!isShopActive && !waveInProgress && activeEnemies.Count == 0)
         {
             StartCoroutine(StartWaveAfterDelay());
@@ -48,8 +34,6 @@ public class WaveSpawner : MonoBehaviour
 
         yield return new WaitForSeconds(2f);
         yield return new WaitForSeconds(timeBetweenWaves);
-
-        archController.enabled = true;
 
         StartCoroutine(SpawnWave());
     }
@@ -76,10 +60,10 @@ public class WaveSpawner : MonoBehaviour
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
         GameObject spawnedEnemy = Instantiate(enemy, spawnPoint.position, spawnPoint.rotation);
 
-        Renderer enemyRenderer = spawnedEnemy.GetComponent<Renderer>();
-        if(enemyRenderer != null)
+        Renderer[] enemyRenderers = spawnedEnemy.GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in enemyRenderers)
         {
-            enemyRenderer.material.color = Random.ColorHSV(0f, 1f, 0.8f, 1, 0.8f, 1f);
+            renderer.material.color = Random.ColorHSV(0f, 1f, 0.8f, 1f, 0.8f, 1f);
         }
 
         activeEnemies.Add(spawnedEnemy);
