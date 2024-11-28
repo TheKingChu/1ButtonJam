@@ -2,118 +2,142 @@ using UnityEngine;
 
 public class LaserGun : MonoBehaviour
 {
-    public LineRenderer laserBeam;
-    public int laserDamage = 5;
-    public float laserRange = 15f;
-    public LayerMask enemyLayer;
-    public Transform secondLaserFirePoint; // Position for the second laser (optional)
+    public GameObject laserPrefab; // Assign the laser beam prefab (a cylinder or similar object)
+    public Transform firePoint; // The starting point for the laser
+    public Transform laserTop; // The rotating top part of the laser gun
+    public string enemyTag = "Enemy"; // Tag assigned to enemies
+    public float laserRange = 15f; // Maximum range of the laser
+    public int laserDamage = 5; // Damage dealt per second
+    public float rotationSpeed = 2f; // Speed at which the laser gun rotates towards the target
+    public float fireDelay = 1f; // Delay before firing after aiming
 
-    private bool isLaserActive = false;
-    private int laserGunLevel = 0; // To track the upgrade level
-
-    void Start()
-    {
-        laserBeam.enabled = false;
-        if (secondLaserFirePoint != null)
-        {
-            // Optionally, deactivate the second laser until the player upgrades it
-            secondLaserFirePoint.gameObject.SetActive(false);
-        }
-    }
+    private GameObject currentLaser; // Active laser instance
+    private Transform currentTarget; // The closest enemy
+    private float fireTimer = 0f; // Timer to handle the fire delay
+    private bool isFiring = false; // Whether the laser is currently firing
 
     void Update()
     {
-        if (isLaserActive)
-        {
-            FireLaser();
+        // Find the closest enemy
+        currentTarget = FindClosestEnemy();
 
-            // If there is a second laser upgrade, handle it
-            if (laserGunLevel >= 2 && secondLaserFirePoint != null)
+        if (currentTarget != null)
+        {
+            AimAtTarget(currentTarget);
+
+            // If aiming is complete, prepare to fire
+            if (IsAimingAtTarget(currentTarget))
             {
-                FireSecondLaser();
+                fireTimer += Time.deltaTime;
+
+                if (fireTimer >= fireDelay && !isFiring)
+                {
+                    StartFiring();
+                }
             }
-        }
-    }
-
-    public void ActivateLaser()
-    {
-        isLaserActive = true;
-    }
-
-    // Method to upgrade the laser gun
-    public void UpgradeLaser(int upgradeLevel)
-    {
-        laserGunLevel = upgradeLevel;
-
-        if (laserGunLevel == 1)
-        {
-            // Activate laser gun on first upgrade
-            ActivateLaser();
-        }
-        else if (laserGunLevel == 2)
-        {
-            // Second laser added
-            if (secondLaserFirePoint != null)
+            else
             {
-                secondLaserFirePoint.gameObject.SetActive(true);
+                // Reset the fire timer if not fully aimed
+                fireTimer = 0f;
             }
-        }
-        else if (laserGunLevel == 3)
-        {
-            // Increase laser damage (damage boost)
-            laserDamage = 15; // Set to higher damage
-        }
-        else if (laserGunLevel == 4)
-        {
-            // Increase damage for both lasers
-            laserDamage = 20; // Max damage
-        }
-    }
-
-    void FireLaser()
-    {
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.forward, out hit, laserRange, enemyLayer))
-        {
-            laserBeam.SetPosition(0, transform.position);
-            laserBeam.SetPosition(1, hit.point);
-
-            // Damage the enemy
-            EnemyBehavior enemy = hit.collider.GetComponent<EnemyBehavior>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(laserDamage);
-            }
-
-            laserBeam.enabled = true;
         }
         else
         {
-            laserBeam.enabled = false;
+            // Disable the laser if no target is found
+            StopFiring();
         }
     }
 
-    // Fire the second laser if available (after second upgrade)
-    void FireSecondLaser()
+    void AimAtTarget(Transform target)
     {
-        RaycastHit hit;
-        if (Physics.Raycast(secondLaserFirePoint.position, secondLaserFirePoint.forward, out hit, laserRange, enemyLayer))
-        {
-            laserBeam.SetPosition(0, secondLaserFirePoint.position);
-            laserBeam.SetPosition(1, hit.point);
+        Vector3 direction = target.position - laserTop.position; // Calculate direction to the target
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        laserTop.rotation = Quaternion.Slerp(
+            laserTop.rotation,
+            targetRotation,
+            Time.deltaTime * rotationSpeed
+        );
+    }
 
-            // Damage the enemy
-            EnemyBehavior enemy = hit.collider.GetComponent<EnemyBehavior>();
-            if (enemy != null)
+    bool IsAimingAtTarget(Transform target)
+    {
+        Vector3 directionToTarget = (target.position - laserTop.position).normalized;
+        float dotProduct = Vector3.Dot(laserTop.forward, directionToTarget);
+        return dotProduct > 0.99f; // Close to perfectly aligned
+    }
+
+    void StartFiring()
+    {
+        isFiring = true;
+
+        if (currentLaser == null)
+        {
+            // Instantiate the laser beam
+            currentLaser = Instantiate(laserPrefab, firePoint.position, Quaternion.identity);
+        }
+
+        // Start updating the laser
+        FireLaser(currentTarget.position);
+    }
+
+    void FireLaser(Vector3 targetPosition)
+    {
+        Vector3 direction = targetPosition - firePoint.position;
+        float distance = Mathf.Min(direction.magnitude, laserRange);
+
+        // Position the laser at the midpoint and adjust its scale
+        currentLaser.transform.position = firePoint.position + direction.normalized * (distance / 2);
+        currentLaser.transform.localScale = new Vector3(
+            currentLaser.transform.localScale.x,
+            distance / 2, // Adjust length to match the distance
+            currentLaser.transform.localScale.z
+        );
+
+        // Rotate the laser to face the target
+        currentLaser.transform.rotation = Quaternion.LookRotation(direction);
+
+        // Damage the enemy over time
+        DamageEnemy(currentTarget);
+    }
+
+    void StopFiring()
+    {
+        isFiring = false;
+        fireTimer = 0f;
+
+        if (currentLaser != null)
+        {
+            Destroy(currentLaser);
+            currentLaser = null;
+        }
+    }
+
+    void DamageEnemy(Transform enemy)
+    {
+        // Apply damage to the enemy over time
+        EnemyBehavior enemyBehavior = enemy.GetComponent<EnemyBehavior>();
+        if (enemyBehavior != null)
+        {
+            enemyBehavior.TakeDamage((int)(laserDamage * Time.deltaTime)); // Continuous damage
+        }
+    }
+
+    Transform FindClosestEnemy()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+        Transform closestEnemy = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (GameObject enemy in enemies)
+        {
+            float distance = Vector3.Distance(firePoint.position, enemy.transform.position);
+            if (distance < closestDistance && distance <= laserRange)
             {
-                enemy.TakeDamage(laserDamage);
+                closestEnemy = enemy.transform;
+                closestDistance = distance;
             }
+        }
 
-            laserBeam.enabled = true;
-        }
-        else
-        {
-            laserBeam.enabled = false;
-        }
+        return closestEnemy;
     }
 }

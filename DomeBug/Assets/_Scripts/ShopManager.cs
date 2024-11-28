@@ -116,6 +116,13 @@ public class ShopManager : MonoBehaviour
         }
     }
 
+    private void HandleLaserUpgrade()
+    {
+        int laserUpgradeLevel = upgradeLevels[2]; // Assuming index 2 is for lasers
+        GameManager.Instance.UpgradeLasers(laserUpgradeLevel);
+    }
+
+
     private void HandleInput()
     {
         if (Input.GetKeyDown(KeyCode.Space))
@@ -235,6 +242,11 @@ public class ShopManager : MonoBehaviour
                     Debug.LogWarning("No upgrade needed. Current canon level is sufficient.");
                 }
             }
+
+            else if(upgradeIndex == 2)
+            {
+                HandleLaserUpgrade();
+            }
         }
         else
         {
@@ -250,7 +262,6 @@ public class ShopManager : MonoBehaviour
         switch (laserUpgradeLevel)
         {
             case 1:
-                GameManager.Instance.laserGun.ActivateLaser();
                 break;
             case 2:
                 //GameManager.Instance.laserGun.UpgradeLaserDamage(10); // Increase laser damage or apply boost

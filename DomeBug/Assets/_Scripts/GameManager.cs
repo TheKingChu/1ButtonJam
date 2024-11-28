@@ -9,7 +9,8 @@ public class GameManager : MonoBehaviour
 
     public GameObject domeHolderPrefab;  // Reference to the DomeHolder prefab
     private GameObject domeHolderObject;  // Reference to the DomeHolder object
-    public LaserGun laserGun;
+    public GameObject laserGunPrefab;
+    private GameObject laserGunObject;
 
     public int currentWave = 1; // Start at wave 1
     public int playerCoins = 0;
@@ -54,6 +55,19 @@ public class GameManager : MonoBehaviour
             Debug.Log("DomeHolder already exists, skipping instantiation.");
         }
 
+        laserGunObject = GameObject.Find("LaserHolder");
+
+        if(laserGunObject == null)
+        {
+            laserGunObject = Instantiate(laserGunPrefab);
+            laserGunObject.name = "LaserHolder";
+            DontDestroyOnLoad(laserGunObject);
+        }
+        else
+        {
+            Debug.Log("LaserHolder already exists, skipping instantiation");
+        }
+
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -95,18 +109,54 @@ public class GameManager : MonoBehaviour
             canonController = archController.GetComponentInChildren<CanonController>();
         }
 
-        while (laserGun == null)
-        {
-            laserGun = FindObjectOfType<LaserGun>();
-            if (laserGun != null)
-            {
-                DontDestroyOnLoad(laserGun.gameObject); // Persist the LaserGun
-            }
-            yield return null; // Wait until the next frame
-        }
-
         Debug.Log("All game objects initialized");
     }
+
+    public void UpgradeLasers(int newLaserLevel)
+    {
+        if (laserGunObject == null)
+        {
+            Debug.LogError("LaserHolder object not found!");
+            return;
+        }
+
+        // Clamp the laser level to the expected range (0-3 for example)
+        newLaserLevel = Mathf.Clamp(newLaserLevel, 0, 3);
+
+        // Find the Laser1 and Laser2 objects within the LaserHolder
+        Transform laser1 = laserGunObject.transform.Find("LaserGun1");
+        Transform laser2 = laserGunObject.transform.Find("LaserGun2");
+
+        if (laser1 == null || laser2 == null)
+        {
+            Debug.LogError("LaserGun1 or LaserGun2 not found in LaserHolder!");
+            return;
+        }
+
+        // Activate lasers based on the new level
+        switch (newLaserLevel)
+        {
+            case 1: // Activate Laser1
+                laser1.gameObject.SetActive(true);
+                laser2.gameObject.SetActive(false);
+                break;
+            case 2: // Keep Laser1 active
+                laser1.gameObject.SetActive(true);
+                laser2.gameObject.SetActive(false);
+                break;
+            case 3: // Activate both Laser1 and Laser2
+                laser1.gameObject.SetActive(true);
+                laser2.gameObject.SetActive(true);
+                break;
+            default: // No lasers active for level 0 or out of range
+                laser1.gameObject.SetActive(false);
+                laser2.gameObject.SetActive(false);
+                break;
+        }
+
+        Debug.Log($"Lasers upgraded to level {newLaserLevel}. Laser1 active: {laser1.gameObject.activeSelf}, Laser2 active: {laser2.gameObject.activeSelf}");
+    }
+
 
 
     private void Update()
