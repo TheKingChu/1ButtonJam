@@ -76,6 +76,12 @@ public class WaveSpawner : MonoBehaviour
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
         GameObject spawnedEnemy = Instantiate(enemy, spawnPoint.position, spawnPoint.rotation);
 
+        Renderer enemyRenderer = spawnedEnemy.GetComponent<Renderer>();
+        if(enemyRenderer != null)
+        {
+            enemyRenderer.material.color = Random.ColorHSV(0f, 1f, 0.8f, 1, 0.8f, 1f);
+        }
+
         activeEnemies.Add(spawnedEnemy);
         spawnedEnemy.GetComponent<EnemyBehavior>().OnEnemyDestroyed += HandleEnemyDestroyed;
     }

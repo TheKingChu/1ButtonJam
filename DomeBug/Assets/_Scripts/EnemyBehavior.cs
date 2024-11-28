@@ -76,9 +76,10 @@ public class EnemyBehavior : MonoBehaviour
             DomeHealth domeHealth = other.gameObject.GetComponent<DomeHealth>();
             domeHealth.TakeDamage(damage);
             GameManager.Instance.playerHealth = domeHealth.currentHealth;
-            Instantiate(deathEffect, transform.position, Quaternion.identity);
+            GameObject effect = Instantiate(deathEffect, transform.position, Quaternion.identity);
             OnEnemyDestroyed?.Invoke(gameObject);
             Destroy(gameObject);
+            Destroy(effect, 5f);
         }
 
         if (other.gameObject.CompareTag("Bullet"))
@@ -101,8 +102,9 @@ public class EnemyBehavior : MonoBehaviour
     private void Die()
     {
         GameManager.Instance.playerCoins += coinReward;
-        Instantiate(deathEffect, transform.position, Quaternion.identity);
+        GameObject effect = Instantiate(deathEffect, transform.position, Quaternion.identity);
         OnEnemyDestroyed?.Invoke(gameObject);
         Destroy(gameObject);
+        Destroy(effect, 5f);
     }
 }
