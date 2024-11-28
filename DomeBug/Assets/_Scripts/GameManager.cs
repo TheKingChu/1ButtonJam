@@ -34,9 +34,9 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject); // Prevent duplicates
         }
 
-        upgradeLevels[0] = 0;
-        upgradeLevels[1] = 0;
-        upgradeLevels[2] = 0;
+        upgradeLevels[0] = 0; //RPM
+        upgradeLevels[1] = 1; //CANONS
+        upgradeLevels[2] = 0; //LASER
 
         // Check if DomeHolder is already in the scene (due to DontDestroyOnLoad)
         domeHolderObject = GameObject.Find("DomeHolder");

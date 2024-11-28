@@ -8,7 +8,7 @@ public class ArchController : MonoBehaviour
     public Transform archCenter;
     public float rotationSpeed = 30f;
 
-    private int canonCount = 1;
+    public int canonCount = 1;
     private List<GameObject> canons = new List<GameObject>();
     private float currentAngle = 0f;
     private bool movingRight = true; // To determine the direction of movement
@@ -29,7 +29,15 @@ public class ArchController : MonoBehaviour
 
     private void AddCanon()
     {
-        float angleStep = 180f / canonCount; // Calculate the spacing of cannons
+        if (canonCount <= 0)
+        {
+            Debug.LogWarning("No canons to add. Skipping AddCanon.");
+            return;  // Avoid any unnecessary operations if canonCount is non-positive.
+        }
+
+        float angleStep = (canonCount > 1) ? 180f / (canonCount - 1) : 180f; // Calculate the spacing of cannons
+        Debug.Log($"Adding a canon. Angle step: {angleStep}, Total canons: {canonCount}");
+
         for (int i = 0; i < canonCount; i++)
         {
             float angle = -90f + i * angleStep; // Start at -90 degrees and distribute over 180 degrees
@@ -89,13 +97,69 @@ public class ArchController : MonoBehaviour
 
     public void UpgradeCanons(int newCanonLevel)
     {
-        int maxCanonLevel = 4;
+        int maxCanonLevel = 4;  // Maximum allowed level for canons
         newCanonLevel = Mathf.Min(newCanonLevel, maxCanonLevel);
 
-        while (canonCount < newCanonLevel)
+        Debug.Log($"UpgradeCanons called. Current canonCount: {canonCount}, Target newCanonLevel: {newCanonLevel}");
+
+        // Step 1: Remove all existing canons
+        ClearCanons();
+
+        // Step 2: Recreate canons based on the new upgrade level
+        canonCount = newCanonLevel;  // Update canon count to the new level
+        Debug.Log($"Recreating canons to match the new level: {canonCount}");
+
+        AddCanonsForCurrentLevel();
+    }
+
+    private void ClearCanons()
+    {
+        // Destroy all existing canons in the scene
+        foreach (GameObject canon in canons)
         {
-            canonCount++;
-            AddCanon();
+            Destroy(canon);
+        }
+
+        // Clear the list to avoid leftover references
+        canons.Clear();
+
+        Debug.Log("All existing canons removed.");
+    }
+
+    private void AddCanonsForCurrentLevel()
+    {
+        // Step 3: Add the required number of canons based on the current level
+        Debug.Log($"Adding {canonCount} canons to match level {canonCount}.");
+
+        float angleStep = (canonCount > 1) ? 180f / (canonCount - 1) : 180f; // Calculate the spacing of cannons
+        for (int i = 0; i < canonCount; i++)
+        {
+            float angle = -90f + i * angleStep; // Start at -90 degrees and distribute over 180 degrees
+            Quaternion rotation = Quaternion.Euler(0, 0, angle);
+            Vector3 position = archCenter.position + rotation * Vector3.up * 5f; // Adjust radius (distance)
+
+            GameObject newCanon = Instantiate(canonPrefab, position, rotation);
+            newCanon.transform.parent = transform;
+            canons.Add(newCanon);
+
+            // Notify listeners (e.g., ShopManager) about the new CanonController
+            CanonController canonController = newCanon.GetComponent<CanonController>();
+            if (canonController != null)
+            {
+                Debug.Log("Invoking OnCanonSpawned for new CanonController.");
+                OnCanonSpawned?.Invoke(canonController); // Trigger the event
+            }
+            else
+            {
+                Debug.LogError("CanonController component not found on spawned canon.");
+            }
+
+            // Apply the current RPM upgrade level to the new canon
+            if (GameManager.Instance != null)
+            {
+                int rpmLevel = GameManager.Instance.upgradeLevels[0];
+                canonController.UpgradeRPM(rpmLevel);
+            }
         }
     }
 }

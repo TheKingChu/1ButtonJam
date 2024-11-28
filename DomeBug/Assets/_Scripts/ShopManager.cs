@@ -47,7 +47,7 @@ public class ShopManager : MonoBehaviour
         upgradeCosts = new int[][]
         {
         new int[] { 5, 10, 20, 40 }, // Costs for upgrade 0
-        new int[] { 10, 20, 40, 80 }, // Costs for upgrade 1
+        new int[] { 0, 10, 20, 40 }, // Costs for upgrade 1
         new int[] { 15, 30, 60, 120 }  // Costs for upgrade 2
         };
 
@@ -200,17 +200,39 @@ public class ShopManager : MonoBehaviour
             GameManager.Instance.upgradeLevels[upgradeIndex]++;
             Debug.Log($"Upgrade {upgradeIndex} purchased. Level: {upgradeLevels[upgradeIndex]}");
 
-            // Call HandleCanonSpawned with the CanonController reference
-            if (archController != null)
+            // Handle RPM upgrade
+            if (upgradeIndex == 0)
             {
-                CanonController canonController = archController.GetComponentInChildren<CanonController>();
-                if (canonController != null)
+                // Call HandleCanonSpawned for RPM upgrade
+                if (archController != null)
                 {
-                    HandleCanonSpawned(canonController);  // Passing the canonController to the method
+                    CanonController canonController = archController.GetComponentInChildren<CanonController>();
+                    if (canonController != null)
+                    {
+                        HandleCanonSpawned(canonController);  // Passing the canonController to the method
+                    }
+                    else
+                    {
+                        Debug.LogError("CanonController not found in ArchController!");
+                    }
+                }
+            }
+            // Handle adding canons upgrade
+            else if (upgradeIndex == 1)
+            {
+                // Call UpgradeCanons to add more canons based on the new level
+                int newCanonLevel = GameManager.Instance.upgradeLevels[1];  // Get the new upgrade level for canons
+                Debug.LogWarning($"Upgrading canons to level: {newCanonLevel}");
+                if (newCanonLevel > archController.canonCount)  // Assuming canonCount is public or accessible
+                {
+                    if (archController != null)
+                    {
+                        archController.UpgradeCanons(newCanonLevel);  // Upgrade only if needed
+                    }
                 }
                 else
                 {
-                    Debug.LogError("CanonController not found in ArchController!");
+                    Debug.LogWarning("No upgrade needed. Current canon level is sufficient.");
                 }
             }
         }
@@ -262,7 +284,7 @@ public class ShopManager : MonoBehaviour
         int[][] costs = new int[][]
         {
             new int[] { 5, 10, 20, 40 }, // Upgrade 0
-            new int[] { 10, 20, 40, 80 }, // Upgrade 1
+            new int[] { 0, 10, 20, 40 }, // Upgrade 1
             new int[] { 15, 30, 60, 120 }  // Upgrade 2
         };
 
