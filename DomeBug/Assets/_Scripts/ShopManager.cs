@@ -21,6 +21,7 @@ public class ShopManager : MonoBehaviour
     [Header("Input Settings")]
     public float holdTime = 1.0f; // Time required to hold for purchase
     public float doubleTapThreshold = 0.3f; // Time window for detecting double tap
+    public float purchaseDelay = 0.5f; // Delay before allowing hold to purchase
 
     private int selectedItemIndex = 0; // Index of the currently selected item
     private bool isLocked = false; // Whether an item is locked for purchase
@@ -29,6 +30,7 @@ public class ShopManager : MonoBehaviour
 
     private float lastTapTime = 0.0f;
     private bool awaitingSecondTap = false;
+    private bool canBuy = false; 
 
     private ArchController archController;
 
@@ -67,6 +69,8 @@ public class ShopManager : MonoBehaviour
         {
             archController.OnCanonSpawned += HandleCanonSpawned;
         }
+
+        archController.GetComponentInChildren<CanonController>().enabled = false;
 
         UpdateShopUI();
     }
@@ -256,30 +260,9 @@ public class ShopManager : MonoBehaviour
         UpdateShopUI(); // Refresh UI with updated stats
     }
 
-
-    private void UpgradeLaserGun(int laserUpgradeLevel)
-    {
-        switch (laserUpgradeLevel)
-        {
-            case 1:
-                break;
-            case 2:
-                //GameManager.Instance.laserGun.UpgradeLaserDamage(10); // Increase laser damage or apply boost
-                break;
-            case 3:
-                // Add another laser
-                // Logic to add a second laser
-                break;
-            case 4:
-                // Damage boost for the second laser
-                break;
-            default:
-                break;
-        }
-    }
-
     public void ReturnToGame()
     {
+        archController.GetComponentInChildren<CanonController>().enabled = true;
         SceneManager.LoadScene("game");
     }
 
@@ -338,5 +321,17 @@ public class ShopManager : MonoBehaviour
         {
             buttonOutlines[i].enabled = (i == selectedItemIndex); // Highlight selected
         }
+
+        if(!canBuy && !isLocked)
+        {
+            StartCoroutine(EnablePurchaseAfterDelay());
+        }
+    }
+
+    private IEnumerator EnablePurchaseAfterDelay()
+    {
+        // Wait for the specified delay before allowing purchase
+        yield return new WaitForSeconds(purchaseDelay);
+        canBuy = true;
     }
 }
