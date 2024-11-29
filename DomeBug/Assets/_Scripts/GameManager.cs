@@ -121,7 +121,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Clamp the laser level to the expected range (0-3 for example)
-        newLaserLevel = Mathf.Clamp(newLaserLevel, 0, 3);
+        newLaserLevel = Mathf.Clamp(newLaserLevel, 0, 4);
 
         // Find the Laser1 and Laser2 objects within the LaserHolder
         Transform laser1 = laserGunObject.transform.Find("LaserGun1");
@@ -133,20 +133,42 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Reference the LaseGun components
+        LaserGun laserGun1 = laser1.GetComponent<LaserGun>();
+        LaserGun laserGun2 = laser2.GetComponent<LaserGun>();
+
+        if (laserGun1 == null || laserGun2 == null)
+        {
+            Debug.LogError("LaserGun components not found on LaserGun1 or LaserGun2!");
+            return;
+        }
+
         // Activate lasers based on the new level
         switch (newLaserLevel)
         {
             case 1: // Activate Laser1
                 laser1.gameObject.SetActive(true);
                 laser2.gameObject.SetActive(false);
+                laserGun1.laserRange = 25f;
+                laserGun1.fireDelay = 5f;
                 break;
             case 2: // Keep Laser1 active
                 laser1.gameObject.SetActive(true);
                 laser2.gameObject.SetActive(false);
+                laserGun1.laserRange = 100f;
+                laserGun1.fireDelay = 1f;
                 break;
             case 3: // Activate both Laser1 and Laser2
                 laser1.gameObject.SetActive(true);
                 laser2.gameObject.SetActive(true);
+                laserGun2.laserRange = 25f;
+                laserGun2.fireDelay = 5f;
+                break;
+            case 4:
+                laser1.gameObject.SetActive(true);
+                laser2.gameObject.SetActive(true);
+                laserGun2.laserRange = 100f;
+                laserGun2.fireDelay = 1f;
                 break;
             default: // No lasers active for level 0 or out of range
                 laser1.gameObject.SetActive(false);
