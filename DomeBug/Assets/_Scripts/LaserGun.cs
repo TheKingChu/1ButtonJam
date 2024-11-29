@@ -2,106 +2,112 @@ using UnityEngine;
 
 public class LaserGun : MonoBehaviour
 {
-    public GameObject laserPrefab; // Assign the laser beam prefab (a cylinder or similar object)
-    public Transform firePoint; // The starting point for the laser
-    public Transform laserTop; // The rotating top part of the laser gun
-    public string enemyTag = "Enemy"; // Tag assigned to enemies
+    public GameObject laserPrefab; // Prefab for the laser beam (cylinder or similar object)
+    public Transform firePoint; // Point where the laser originates
+    public Transform laserTop; // Part of the gun that rotates towards the target
+    public string enemyTag = "Enemy"; // Tag to identify enemies
     public float laserRange = 15f; // Maximum range of the laser
     public int laserDamage = 5; // Damage dealt per second
-    public float rotationSpeed = 2f; // Speed at which the laser gun rotates towards the target
-    public float fireDelay = 1f; // Delay before firing after aiming
+    public float rotationSpeed = 5f; // Speed at which the gun rotates towards the target
+    public float fireDelay = 0.5f; // Delay before the laser starts firing
 
-    private GameObject currentLaser; // Active laser instance
+    private GameObject currentLaser; // Active instance of the laser beam
     private Transform currentTarget; // The closest enemy
-    private float fireTimer = 0f; // Timer to handle the fire delay
-    private bool isFiring = false; // Whether the laser is currently firing
+    private bool isFiring = false; // Whether the laser is actively firing
+    private float fireTimer = 0f; // Timer to handle the delay before firing
 
     void Update()
     {
-        // Find the closest enemy
+        // Find the closest enemy within range
         currentTarget = FindClosestEnemy();
 
         if (currentTarget != null)
         {
+            // Aim at the target
             AimAtTarget(currentTarget);
 
-            // If aiming is complete, prepare to fire
+            // Check if the gun is aligned with the target
             if (IsAimingAtTarget(currentTarget))
             {
+                // Fire the laser after the delay
                 fireTimer += Time.deltaTime;
-
-                if (fireTimer >= fireDelay && !isFiring)
+                if (fireTimer >= fireDelay)
                 {
-                    StartFiring();
+                    FireLaser(currentTarget.position);
+                    DamageEnemy(currentTarget);
                 }
             }
             else
             {
-                // Reset the fire timer if not fully aimed
+                // Reset the firing timer while aiming
                 fireTimer = 0f;
             }
         }
         else
         {
-            // Disable the laser if no target is found
+            // Stop firing if no target is found
             StopFiring();
         }
     }
 
     void AimAtTarget(Transform target)
     {
-        Vector3 direction = target.position - laserTop.position; // Calculate direction to the target
+        // Calculate the direction to the target
+        Vector3 direction = target.position - laserTop.position;
         Quaternion targetRotation = Quaternion.LookRotation(direction);
+
+        // Smoothly rotate the laser top
         laserTop.rotation = Quaternion.Slerp(
             laserTop.rotation,
             targetRotation,
             Time.deltaTime * rotationSpeed
         );
+
+        Debug.DrawRay(laserTop.position, laserTop.forward * 5, Color.blue); // Shows where the laserTop is pointing
+        Debug.DrawRay(laserTop.position, (target.position - laserTop.position).normalized * 5, Color.red); // Shows the direction to the target
+
     }
 
     bool IsAimingAtTarget(Transform target)
     {
+        // Check if the gun is aligned with the target
         Vector3 directionToTarget = (target.position - laserTop.position).normalized;
         float dotProduct = Vector3.Dot(laserTop.forward, directionToTarget);
-        return dotProduct > 0.99f; // Close to perfectly aligned
-    }
 
-    void StartFiring()
-    {
-        isFiring = true;
-
-        if (currentLaser == null)
-        {
-            // Instantiate the laser beam
-            currentLaser = Instantiate(laserPrefab, firePoint.position, Quaternion.identity);
-        }
-
-        // Start updating the laser
-        FireLaser(currentTarget.position);
+        // Return true if almost perfectly aligned
+        return dotProduct > 0.99f;
     }
 
     void FireLaser(Vector3 targetPosition)
     {
+        if (currentLaser == null)
+        {
+            // Instantiate the laser beam if it doesn't exist
+            currentLaser = Instantiate(laserPrefab, firePoint.position, Quaternion.identity);
+        }
+
+        // Calculate the direction and distance to the target
         Vector3 direction = targetPosition - firePoint.position;
-        float distance = Mathf.Min(direction.magnitude, laserRange);
+        float distance = direction.magnitude;
 
-        // Position the laser at the midpoint and adjust its scale
-        currentLaser.transform.position = firePoint.position + direction.normalized * (distance / 2);
-        currentLaser.transform.localScale = new Vector3(
-            currentLaser.transform.localScale.x,
-            distance / 2, // Adjust length to match the distance
-            currentLaser.transform.localScale.z
-        );
+        // Position the laser at the midpoint between the fire point and the target
+        currentLaser.transform.position = firePoint.position + direction / 2;
 
-        // Rotate the laser to face the target
-        currentLaser.transform.rotation = Quaternion.LookRotation(direction);
+        // Scale the laser to match the distance
+        currentLaser.transform.localScale = new Vector3(currentLaser.transform.localScale.x, distance / 2, currentLaser.transform.localScale.z);
 
-        // Damage the enemy over time
-        DamageEnemy(currentTarget);
+        // Rotate the laser to face the target, accounting for Unity cylinder default alignment
+        Quaternion laserRotation = Quaternion.LookRotation(direction);
+        laserRotation *= Quaternion.Euler(90, 0, 0); // Adjust rotation for cylinder's Y-axis alignment
+        currentLaser.transform.rotation = laserRotation;
+
+        // Set the laser as active
+        isFiring = true;
     }
 
     void StopFiring()
     {
+        // Reset the firing state and destroy the laser beam
         isFiring = false;
         fireTimer = 0f;
 
@@ -114,16 +120,17 @@ public class LaserGun : MonoBehaviour
 
     void DamageEnemy(Transform enemy)
     {
-        // Apply damage to the enemy over time
+        // Apply damage to the enemy continuously
         EnemyBehavior enemyBehavior = enemy.GetComponent<EnemyBehavior>();
         if (enemyBehavior != null)
         {
-            enemyBehavior.TakeDamage((int)(laserDamage * Time.deltaTime)); // Continuous damage
+            enemyBehavior.TakeDamage(Mathf.CeilToInt(laserDamage * Time.deltaTime)); // Continuous damage over time
         }
     }
 
     Transform FindClosestEnemy()
     {
+        // Find all enemies in the scene
         GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
         Transform closestEnemy = null;
         float closestDistance = Mathf.Infinity;
