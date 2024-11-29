@@ -15,6 +15,8 @@ public class DomeHealth : MonoBehaviour
     public Color flashColor = Color.red;
     private Color originalColor;
 
+    public AudioSource audioSource;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -34,6 +36,7 @@ public class DomeHealth : MonoBehaviour
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         healthSlider.value = currentHealth;
+        audioSource.Play();
         if(fillImage != null)
         {
             StartCoroutine(Flash());

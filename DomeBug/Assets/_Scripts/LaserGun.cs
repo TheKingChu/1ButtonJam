@@ -16,6 +16,8 @@ public class LaserGun : MonoBehaviour
     private bool isFiring = false; // Whether the laser is actively firing
     private float fireTimer = 0f; // Timer to handle the delay before firing
 
+    public AudioSource audioSource;
+
     void Update()
     {
         // Find the closest enemy within range
@@ -103,6 +105,7 @@ public class LaserGun : MonoBehaviour
 
         // Set the laser as active
         isFiring = true;
+        audioSource.Play();
     }
 
     void StopFiring()

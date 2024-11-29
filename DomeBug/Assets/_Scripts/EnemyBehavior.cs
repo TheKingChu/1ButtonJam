@@ -15,6 +15,7 @@ public class EnemyBehavior : MonoBehaviour
     private int damage;
 
     public GameObject deathEffect;
+    public AudioSource audioSource;
 
     private bool isPaused = false;
 
@@ -145,6 +146,10 @@ public class EnemyBehavior : MonoBehaviour
     {
         GameManager.Instance.playerCoins += coinReward;
         GameObject effect = Instantiate(deathEffect, transform.position, Quaternion.identity);
+
+        audioSource.Play();
+        Debug.Log("Death sound played.");
+
         OnEnemyDestroyed?.Invoke(gameObject);
         Destroy(gameObject);
         Destroy(effect, 5f);
