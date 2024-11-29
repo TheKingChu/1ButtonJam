@@ -1006,6 +1006,71 @@ MonoBehaviour:
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
   m_AfterStackBundles: []
+--- !u!1001 &1078198351
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -146.1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 291.7274
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -53.479626
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.010101493
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.980954
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.19396731
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.0019974022
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -181.18
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -22.37
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_DynamicOccludee
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 7f65f61e2640e0e42bcce437aaaeb5e9, type: 2}
+    - target: {fileID: 919132149155446097, guid: d67868c963aede045ac529add6ef4170, type: 3}
+      propertyPath: m_Name
+      value: Moon
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d67868c963aede045ac529add6ef4170, type: 3}
 --- !u!1 &1225573266
 GameObject:
   m_ObjectHideFlags: 0
@@ -1706,3 +1771,4 @@ SceneRoots:
   - {fileID: 1313731385}
   - {fileID: 1663864481}
   - {fileID: 1833035638}
+  - {fileID: 1078198351}

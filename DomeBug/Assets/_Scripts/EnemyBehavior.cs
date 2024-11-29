@@ -24,8 +24,18 @@ public class EnemyBehavior : MonoBehaviour
     private float healthMultiplier = 1f;
     private float damageMultiplier = 1f;
 
+    private Transform domeTransform;
+
+
     private void Start()
     {
+        // Cache the dome transform once at the start to improve performance
+        GameObject dome = GameObject.FindGameObjectWithTag("Dome");
+        if (dome != null)
+        {
+            domeTransform = dome.transform;
+        }
+
         SetEnemyDifficulty(healthMultiplier, damageMultiplier);
     }
 
@@ -49,7 +59,10 @@ public class EnemyBehavior : MonoBehaviour
             }
 
             // Normal behavior (moving towards the dome)
-            MoveTowardsDome();
+            if (domeTransform != null)
+            {
+                MoveTowardsDome();
+            }
         }
     }
 
@@ -79,20 +92,19 @@ public class EnemyBehavior : MonoBehaviour
 
     private void MoveTowardsDome()
     {
-        Transform dome = GameObject.FindGameObjectWithTag("Dome").transform;
         // Calculate direction to the dome
-        Vector3 direction = (dome.position - transform.position).normalized;
+        Vector3 direction = (domeTransform.position - transform.position).normalized;
 
         // Rotate the enemy towards the dome
         Quaternion targetRotation = Quaternion.LookRotation(direction);
 
         // Adjust rotation to ensure correct orientation (Fix the -90 or -180 issue)
         targetRotation = Quaternion.Euler(targetRotation.eulerAngles.x, targetRotation.eulerAngles.y, targetRotation.eulerAngles.z);
-        
+
         // Move the enemy towards the dome
-        transform.SetPositionAndRotation(Vector3.MoveTowards(transform.position, dome.position, Time.deltaTime * moveSpeed), 
-            Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed
-        ));
+        transform.SetPositionAndRotation(Vector3.MoveTowards(transform.position, domeTransform.position, Time.deltaTime * moveSpeed),
+            Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed)
+        );
     }
 
     private void OnTriggerEnter(Collider other)
@@ -100,8 +112,12 @@ public class EnemyBehavior : MonoBehaviour
         if (other.gameObject.CompareTag("Dome"))
         {
             DomeHealth domeHealth = other.gameObject.GetComponent<DomeHealth>();
-            domeHealth.TakeDamage(damage);
-            GameManager.Instance.playerHealth = domeHealth.currentHealth;
+            if (domeHealth != null)
+            {
+                domeHealth.TakeDamage(damage);
+                GameManager.Instance.playerHealth = domeHealth.currentHealth;
+            }
+
             GameObject effect = Instantiate(deathEffect, transform.position, Quaternion.identity);
             OnEnemyDestroyed?.Invoke(gameObject);
             Destroy(gameObject);
@@ -110,7 +126,7 @@ public class EnemyBehavior : MonoBehaviour
 
         if (other.gameObject.CompareTag("Bullet"))
         {
-            Destroy(other.gameObject);
+            Destroy(other.gameObject);  // Destroy bullet
             Die();
         }
     }
@@ -141,5 +157,8 @@ public class EnemyBehavior : MonoBehaviour
 
         health = Mathf.RoundToInt(baseHealth * healthMultiplier);
         damage = Mathf.RoundToInt(baseDamage * damageMultiplier);
+
+        Debug.Log("Enemy health set to: " + health + " (Multiplier: " + healthMultiplier + ")");
+        Debug.Log("Enemy damage set to: " + damage + " (Multiplier: " + damageMultiplier + ")");
     }
 }
