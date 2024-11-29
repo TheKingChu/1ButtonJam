@@ -15,6 +15,9 @@ public class EnemyBehavior : MonoBehaviour
 
     private bool isPaused = false;
 
+    public float moveSpeed = 2f;
+    public float rotationSpeed = 5f;
+
     // Update is called once per frame
     void Update()
     {
@@ -66,7 +69,19 @@ public class EnemyBehavior : MonoBehaviour
     private void MoveTowardsDome()
     {
         Transform dome = GameObject.FindGameObjectWithTag("Dome").transform;
-        transform.position = Vector3.MoveTowards(transform.position, dome.position, Time.deltaTime * 2f);
+        // Calculate direction to the dome
+        Vector3 direction = (dome.position - transform.position).normalized;
+
+        // Rotate the enemy towards the dome
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+
+        // Adjust rotation to ensure correct orientation (Fix the -90 or -180 issue)
+        targetRotation = Quaternion.Euler(targetRotation.eulerAngles.x, targetRotation.eulerAngles.y, targetRotation.eulerAngles.z);
+        
+        // Move the enemy towards the dome
+        transform.SetPositionAndRotation(Vector3.MoveTowards(transform.position, dome.position, Time.deltaTime * moveSpeed), 
+            Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed
+        ));
     }
 
     private void OnTriggerEnter(Collider other)
