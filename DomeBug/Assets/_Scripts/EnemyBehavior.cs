@@ -7,9 +7,12 @@ public class EnemyBehavior : MonoBehaviour
     public delegate void EnemyDestroyedHandler(GameObject enemy);
     public event EnemyDestroyedHandler OnEnemyDestroyed;
 
-    public int health = 1;
-    public int damage = 5;
+    public int baseHealth = 1;
+    public int baseDamage = 5;
     public int coinReward = 1;
+
+    private int health;
+    private int damage;
 
     public GameObject deathEffect;
 
@@ -17,6 +20,14 @@ public class EnemyBehavior : MonoBehaviour
 
     public float moveSpeed = 2f;
     public float rotationSpeed = 5f;
+
+    private float healthMultiplier = 1f;
+    private float damageMultiplier = 1f;
+
+    private void Start()
+    {
+        SetEnemyDifficulty(healthMultiplier, damageMultiplier);
+    }
 
     // Update is called once per frame
     void Update()
@@ -121,5 +132,14 @@ public class EnemyBehavior : MonoBehaviour
         OnEnemyDestroyed?.Invoke(gameObject);
         Destroy(gameObject);
         Destroy(effect, 5f);
+    }
+
+    public void SetEnemyDifficulty(float healthMult, float damageMult)
+    {
+        healthMultiplier = healthMult;
+        damageMultiplier = damageMult;
+
+        health = Mathf.RoundToInt(baseHealth * healthMultiplier);
+        damage = Mathf.RoundToInt(baseDamage * damageMultiplier);
     }
 }

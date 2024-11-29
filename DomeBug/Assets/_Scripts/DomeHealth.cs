@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class DomeHealth : MonoBehaviour
@@ -55,5 +56,6 @@ public class DomeHealth : MonoBehaviour
     {
         //add gameover
         Debug.Log("game over");
+        SceneManager.LoadScene("menu");
     }
 }

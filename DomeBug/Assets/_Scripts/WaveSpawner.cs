@@ -43,9 +43,13 @@ public class WaveSpawner : MonoBehaviour
         waveNumber++;
         int waveSize = initialWaveSize + waveNumber;
 
-        for(int i = 0; i < waveSize; i++)
+        // Define the difficulty multipliers for health and damage based on the wave number
+        float healthMultiplier = 1 + (waveNumber * 0.1f);  // Increase health by 10% per wave
+        float damageMultiplier = 1 + (waveNumber * 0.05f);  // Increase damage by 5% per wave
+
+        for (int i = 0; i < waveSize; i++)
         {
-            SpawnEnemy();
+            SpawnEnemy(healthMultiplier, damageMultiplier);
             yield return new WaitForSeconds(0.5f);
         }
 
@@ -54,11 +58,14 @@ public class WaveSpawner : MonoBehaviour
         StartCoroutine(CheckForEnemies());
     }
 
-    private void SpawnEnemy()
+    private void SpawnEnemy(float healthMultiplier, float damageMultiplier)
     {
         GameObject enemy = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
         GameObject spawnedEnemy = Instantiate(enemy, spawnPoint.position, spawnPoint.rotation);
+
+        EnemyBehavior enemyBehavior = spawnedEnemy.GetComponent<EnemyBehavior>();
+        enemyBehavior.SetEnemyDifficulty(healthMultiplier, damageMultiplier);
 
         Renderer[] enemyRenderers = spawnedEnemy.GetComponentsInChildren<Renderer>();
         foreach (Renderer renderer in enemyRenderers)

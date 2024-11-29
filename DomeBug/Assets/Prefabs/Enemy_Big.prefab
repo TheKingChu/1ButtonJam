@@ -119,8 +119,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 859d9e1735d9f6449ab86cea06d7ed96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 3
-  damage: 5
+  baseHealth: 1
+  baseDamage: 3
   coinReward: 2
   deathEffect: {fileID: 3959398053423883675, guid: 830ded6371fb7bd41a85b55661d52412, type: 3}
   moveSpeed: 2
