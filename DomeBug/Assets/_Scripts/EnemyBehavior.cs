@@ -11,8 +11,8 @@ public class EnemyBehavior : MonoBehaviour
     public int baseDamage = 5;
     public int coinReward = 1;
 
-    private int health;
-    private int damage;
+    [SerializeField] private int health;
+    [SerializeField] private int damage;
 
     public GameObject deathEffect;
     public AudioSource audioSource;
@@ -128,7 +128,7 @@ public class EnemyBehavior : MonoBehaviour
         if (other.gameObject.CompareTag("Bullet"))
         {
             Destroy(other.gameObject);  // Destroy bullet
-            Die();
+            TakeDamage(3);
         }
     }
 

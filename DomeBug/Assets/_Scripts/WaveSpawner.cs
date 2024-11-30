@@ -13,7 +13,6 @@ public class WaveSpawner : MonoBehaviour
     public ShopManager shopManager;
     public WaveManager waveManager;
 
-    private int waveNumber = 0;
     public static bool isShopActive = false;
     private bool waveInProgress = false;
     private List<GameObject> activeEnemies = new List<GameObject>();
@@ -40,13 +39,13 @@ public class WaveSpawner : MonoBehaviour
 
     private IEnumerator SpawnWave()
     {
-        waveNumber++;
-        int waveSize = initialWaveSize + waveNumber;
+        int waveNumber = GameManager.Instance.currentWave;
 
         // Define the difficulty multipliers for health and damage based on the wave number
-        float healthMultiplier = 1 + (waveNumber * 0.1f);  // Increase health by 10% per wave
-        float damageMultiplier = 1 + (waveNumber * 0.05f);  // Increase damage by 5% per wave
+        float healthMultiplier = 1 + (waveNumber * 2f);  // Increase health by 10% per wave
+        float damageMultiplier = 1 + (waveNumber * 2f);  // Increase damage by 5% per wave
 
+        int waveSize = initialWaveSize + waveNumber;
         for (int i = 0; i < waveSize; i++)
         {
             SpawnEnemy(healthMultiplier, damageMultiplier);

@@ -157,6 +157,7 @@ public class GameManager : MonoBehaviour
                 laser2.gameObject.SetActive(false);
                 laserGun1.laserRange = 100f;
                 laserGun1.fireDelay = 1f;
+                laserGun1.laserDamage = 50;
                 break;
             case 3: // Activate both Laser1 and Laser2
                 laser1.gameObject.SetActive(true);
@@ -169,6 +170,7 @@ public class GameManager : MonoBehaviour
                 laser2.gameObject.SetActive(true);
                 laserGun2.laserRange = 100f;
                 laserGun2.fireDelay = 1f;
+                laserGun2.laserDamage = 50;
                 break;
             default: // No lasers active for level 0 or out of range
                 laser1.gameObject.SetActive(false);

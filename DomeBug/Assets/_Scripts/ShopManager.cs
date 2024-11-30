@@ -12,6 +12,9 @@ public class ShopManager : MonoBehaviour
     public TextMeshProUGUI[] upgradeTexts; // Upgrade descriptions and levels
     public Slider[] progressBars; // Progress bars for purchasing
     public Outline[] buttonOutlines; // Outlines for indicating selected item
+    public TMP_Text feedbackText; // Text for when you don't have enough money
+
+    public float feedbackDuration = 2f;
 
     [Header("Upgrades")]
     public int[] upgradeLevels; // Current upgrade levels
@@ -255,9 +258,27 @@ public class ShopManager : MonoBehaviour
         else
         {
             Debug.Log("Not enough coins to purchase the upgrade!");
+            StartCoroutine(ShowFeedback("Not enough coins to purchase the upgrade!"));
         }
 
         UpdateShopUI(); // Refresh UI with updated stats
+    }
+
+    private IEnumerator ShowFeedback(string message)
+    {
+        feedbackText.text = message;
+        feedbackText.gameObject.SetActive(true);  // Ensure the text is visible
+        yield return new WaitForSeconds(feedbackDuration);  // Wait for the feedback duration
+        feedbackText.gameObject.SetActive(false);  // Hide the message
+    }
+
+    private IEnumerator ShowFeedbackAndReturnToGame(string message)
+    {
+        feedbackText.text = message;  // Show the message
+        feedbackText.gameObject.SetActive(true);  // Ensure the text is visible
+        yield return new WaitForSeconds(feedbackDuration);  // Wait for the feedback duration
+        feedbackText.gameObject.SetActive(false);  // Hide the message
+        ReturnToGame();  // Transition back to the game
     }
 
     public void ReturnToGame()
@@ -301,7 +322,7 @@ public class ShopManager : MonoBehaviour
         // If the player can't afford any upgrade, return to the game
         if (!canAffordUpgrade)
         {
-            ReturnToGame();
+            StartCoroutine(ShowFeedbackAndReturnToGame("You don't have enough money!"));
             return;  // Exit the method early, no need to update the UI if we're going back to the game
         }
 
