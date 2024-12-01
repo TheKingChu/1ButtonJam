@@ -59,6 +59,7 @@ public class DomeHealth : MonoBehaviour
     {
         //add gameover
         Debug.Log("game over");
+        GameManager.Instance.ResetGame();
         SceneManager.LoadScene("menu");
     }
 }

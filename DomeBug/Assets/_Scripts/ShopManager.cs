@@ -13,6 +13,7 @@ public class ShopManager : MonoBehaviour
     public Slider[] progressBars; // Progress bars for purchasing
     public Outline[] buttonOutlines; // Outlines for indicating selected item
     public TMP_Text feedbackText; // Text for when you don't have enough money
+    public GameObject feedbackObject; // Object for holding text, panel etc...
 
     public float feedbackDuration = 2f;
 
@@ -41,6 +42,7 @@ public class ShopManager : MonoBehaviour
     {
         Time.timeScale = 1;
         Debug.Log("ShopManager script is active!");
+        feedbackObject.SetActive(false);
 
         if (GameManager.Instance == null)
         {
@@ -267,8 +269,10 @@ public class ShopManager : MonoBehaviour
     private IEnumerator ShowFeedback(string message)
     {
         feedbackText.text = message;
+        feedbackObject.SetActive(true);
         feedbackText.gameObject.SetActive(true);  // Ensure the text is visible
         yield return new WaitForSeconds(feedbackDuration);  // Wait for the feedback duration
+        feedbackObject.SetActive(false);
         feedbackText.gameObject.SetActive(false);  // Hide the message
     }
 
