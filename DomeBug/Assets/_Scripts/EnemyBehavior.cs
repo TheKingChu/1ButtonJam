@@ -27,6 +27,12 @@ public class EnemyBehavior : MonoBehaviour
 
     private Transform domeTransform;
 
+    private Renderer[] renderers;
+    private Color originalColor;
+    private bool isFlashing = false;
+    public float flashDuration = 0.1f;
+    public Color flashColor = Color.white;
+
 
     private void Start()
     {
@@ -35,6 +41,12 @@ public class EnemyBehavior : MonoBehaviour
         if (dome != null)
         {
             domeTransform = dome.transform;
+        }
+
+        renderers = GetComponentsInChildren<Renderer>();
+        if(renderers.Length > 0 )
+        {
+            originalColor = renderers[0].material.color;
         }
 
         SetEnemyDifficulty(healthMultiplier, damageMultiplier);
@@ -136,10 +148,35 @@ public class EnemyBehavior : MonoBehaviour
     {
         if (isPaused) return;  // If paused, don't take damage
         health -= dmg;
-        if(health <= 0)
+        if (!isFlashing)
+        {
+            StartCoroutine(FlashEffect());
+        }
+        if (health <= 0)
         {
             Die();
         }
+    }
+
+    private IEnumerator FlashEffect()
+    {
+        isFlashing = true;
+
+        // Change the material color to the flash color
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.material.color = flashColor;
+        }
+
+        yield return new WaitForSeconds(flashDuration);
+
+        // Revert the material color to the original color
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.material.color = originalColor;
+        }
+
+        isFlashing = false;
     }
 
     private void Die()
