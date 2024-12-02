@@ -268,8 +268,8 @@ public class ShopManager : MonoBehaviour
 
     private IEnumerator ShowFeedback(string message)
     {
-        feedbackText.text = message;
         feedbackObject.SetActive(true);
+        feedbackText.text = message;
         feedbackText.gameObject.SetActive(true);  // Ensure the text is visible
         yield return new WaitForSeconds(feedbackDuration);  // Wait for the feedback duration
         feedbackObject.SetActive(false);
@@ -278,8 +278,9 @@ public class ShopManager : MonoBehaviour
 
     private IEnumerator ShowFeedbackAndReturnToGame(string message)
     {
+        feedbackObject.SetActive(true);
         feedbackText.text = message;  // Show the message
-        feedbackText.gameObject.SetActive(true);  // Ensure the text is visible
+        feedbackText.gameObject.SetActive(true);
         yield return new WaitForSeconds(feedbackDuration);  // Wait for the feedback duration
         feedbackText.gameObject.SetActive(false);  // Hide the message
         ReturnToGame();  // Transition back to the game
